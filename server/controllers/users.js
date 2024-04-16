@@ -2,34 +2,104 @@ import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 const prisma = new PrismaClient()
 
-async function createUser(req,res) {
-    try {
-      const { firstName, lastName, email, password } = req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.user.create({
-        data:{
-          firstName, 
-          lastName,
-          email,
-          password: hashedPassword,
-        }
-      });
-      res.json(user);
-      console.log(`User created successfully`);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      res.status(500).json({ error: "Error creating user" });
+async function userExist(email){
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+    if (existingUser) {
+      return true;
     }
+    return false;
+  } catch (error) {
+    console.error("Error checking if user exists:", error);
+    return false;
   }
-
-  async function showmessage(req, res) {
-    try {
-      const message = "hi everyone"
-      res.json(message);
-    } catch (error) {
-      console.error("Error retrieving messages:", error);
-      res.status(500).json({ error: "Error retrieving messages" });
+}
+async function createUser(req, res) {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+    if (await userExist(email)) {
+      return res.status(400).json({ error: "User already exists" });
     }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+      }
+    });
+    res.status(201).json({ message: "User created successfully" });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Error creating user" });
   }
-
-  export { createUser, showmessage };
+}
+async function google (req, res) {
+  try {
+    const { firstName,lastName,email,picture,googleId} = req.body;
+    if (await userExist(email)) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+    const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8) ;
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+    const user = await prisma.user.create({
+      data: {
+        firstName: firstName,
+        lastName: lastName,
+        email,
+        password: hashedPassword,
+        picture: picture,
+        googleId: googleId,
+      }
+    })
+    res.status(201).json({ message: "User created successfully" });
+  } catch (error) {
+    console.error("Error creating user:", error);
+    res.status(500).json({ error: "Error creating user" });
+  }
+}
+async function login(req,res){
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+    res.status(200).json({ message: "Login successful" });
+  } catch (error) {
+    console.error("Error logging in:", error);
+    res.status(500).json({ error: "Error logging in" });
+  }
+}
+async function googlelogin(req,res){
+  try {
+    const { googleId} = req.body;
+    const user = await prisma.user.findUnique({
+      where: {
+        googleId: googleId,
+      },
+    });
+    if (!user) {
+      //create new one
+      await google (req, res);
+    }else{
+      res.status(200).json({ message: "Login successful" });
+    }
+  } catch (error) {
+    console.error("Error logging in:", error);
+  }
+}
+export { createUser, google ,login, googlelogin};

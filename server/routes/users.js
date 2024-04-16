@@ -1,9 +1,7 @@
 
 import { Router } from 'express';
 const router = Router();
-import { createUser, showmessage} from '../controllers/users.js';
-
-
+import { createUser,google,login,googlelogin} from '../controllers/users.js';
 
 /**
  * @swagger
@@ -39,12 +37,16 @@ import { createUser, showmessage} from '../controllers/users.js';
  *           application/json:
  *             example:
  *               message: the user creation was successful
+ *       400:
+ *         description: User already exists
  *       500:
  *         description: Internal server error
  */
 
-router.post('/signup', createUser);
-
+router.post('/account/signup', createUser);
+router.post('/auth/google', google);
+router.post('/account/login', login);
+router.post('/auth/googlelogin', googlelogin);
 // /**
 //  * @swagger
 //  * /users/{id}:
@@ -84,6 +86,6 @@ router.post('/signup', createUser);
  *         description: Internal server error
  */
 
-router.get('/users', showmessage);
+router.get('/users');
 
 export default router;
