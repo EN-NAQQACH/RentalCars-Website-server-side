@@ -1,6 +1,25 @@
 import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 const prisma = new PrismaClient()
+import jwt from 'jsonwebtoken'
+import dotenv from 'dotenv';
+dotenv.config();
+
+
+const generateToken = (user) => {
+  const payload = {
+      id: user._id,
+      email: user.email,
+  };
+
+  const options = {
+      expiresIn: '24h', // Token expiration time
+  };
+  
+  return jwt.sign(payload,process.env.ACCESS_TOKEN_SECRET, options);
+};
+
+
 
 async function userExist(email){
   try {
@@ -78,7 +97,8 @@ async function login(req,res){
     if (!isMatch) {
       return res.status(400).json({ error: "Invalid password" });
     }
-    res.status(200).json({ message: "Login successful" });
+    const token = generateToken(user); // Generate token upon successful login
+    res.status(200).json({ message: "Login successful", token }); // Send token in response
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).json({ error: "Error logging in" });
