@@ -21,4 +21,6 @@ model User {
   password  String
   picture   String   @default("")
   googleId  String   @unique @default("")
+  about     String   @default("")
+  number    String   @default("")
 }
