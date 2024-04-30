@@ -7,7 +7,7 @@ const options = {
         info: {
             title: 'Quiz API',
             version: '1.3.1',
-            description: 'API for the Quiz app',
+            description: 'API for the EaslyCars website',
         },
     },
     apis: ["./server/routes/*.js"],
