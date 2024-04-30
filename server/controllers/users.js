@@ -3,8 +3,79 @@ import bcrypt from 'bcrypt'
 const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
+import nodemailer from 'nodemailer';
+import  CryptoJS from 'crypto-js'
+import googleapi from 'googleapis';
 dotenv.config();
 
+const CLIENT_ID = process.env.CLIENT_ID;
+const CLIENT_SECRET = process.env.CLIENT_SECRET;
+const REDIRECT_URI = process.env.REDIRECT_URI;
+const REFRESH_TOKEN = process.env.REFRESH_TOKEN;
+
+const oAuth2Client = new googleapi.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
+oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+async function sendMail(email, subject, message,req, res) {
+  try
+  {
+    const accessToken = await oAuth2Client.getAccessToken();
+  
+    const transport = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        type: 'OAuth2',
+        user: 'easlycars@gmail.com',
+        clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET,
+        refreshToken: REFRESH_TOKEN,
+        accessToken: accessToken
+      }
+    });
+
+    const mailOptions = {
+      from: ' EaslyCars <easlycars@gmail.com>',
+      to: email,
+      subject: subject,
+      text: 'Password Reset',
+      html: '<div><h2>Password Reset Request</h2><p>Hello '+ message.lastName +',</p><p> Weve received a request to reset the password for the EaslyCars account associated with '+ message.email +'</p><p>Your password reset request has been received. Below is your new password:</p><p><strong>'+ message.password +'</strong></p><p>If you did not request this password reset, please contact support immediately.</p><p>Thank you.</p></div> <footer><p>&copy; 2024 EaslyCars. All rights reserved.</p></footer>'
+    };
+    const result = await transport.sendMail(mailOptions);
+    res.status(200).json({ message: "Email sent successfully" });
+  }catch (error) {
+    res.status(200).json({ error: "Failed to send email" });
+  }
+}
+
+  // async function sendEmail(){
+  //   try {
+  //     const accessToken = await oAuth2Client.getAccessToken();
+  
+  //     const transport = nodemailer.createTransport({
+  //       service: 'gmail',
+  //       auth: {
+  //         type: 'OAuth2',
+  //         user: 'easlycars@gmail.com',
+  //         clientId: CLIENT_ID,
+  //         clientSecret: CLIENT_SECRET,
+  //         refreshToken: REFRESH_TOKEN,
+  //         accessToken: accessToken
+  //       }
+  //     });
+  
+  //     const mailOptions = {
+  //       from: ' EaslyCars <easlycars@gmail.com>',
+  //       to: email,
+  //       subject: subject,
+  //       text: text
+  //     };
+  
+  //     const result = await transport.sendMail(mailOptions);
+  //     return result;
+  //   } catch (error) {
+  //     return error;
+  //   }
+  // };
 
 const generateToken = (user) => {
   const payload = {
@@ -19,7 +90,22 @@ const generateToken = (user) => {
 
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, options);
 };
+async function encrypt(data){
+  const ciphertext =  CryptoJS.AES.encrypt(data, process.env.ACCESS_TOKEN_SECRET).toString();
+  return ciphertext;
+}
+async function decrypt(data){
+  try{
+  const bytes = CryptoJS.AES.decrypt(data, process.env.ACCESS_TOKEN_SECRET);
+  if(bytes.sigBytes >0){
+    const decrypteddata = bytes.toString(CryptoJS.enc.Utf8);
+    return decrypteddata
+  }
+}catch (error){
+  throw new Error('Invalid password');
 
+}
+}
 async function userExist(email) {
   try {
     const existingUser = await prisma.user.findUnique({
@@ -28,7 +114,7 @@ async function userExist(email) {
       },
     });
     if (existingUser) {
-      return true;
+      return existingUser;
     }
     return false;
   } catch (error) {
@@ -42,13 +128,13 @@ async function createUser(req, res) {
     if (await userExist(email)) {
       return res.status(400).json({ error: "User already exists" });
     }
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const passwordencrypted = await encrypt(password);
     const user = await prisma.user.create({
       data: {
         firstName,
         lastName,
         email,
-        password: hashedPassword,
+        password: passwordencrypted,
       }
     });
     res.status(201).json({ message: "User created successfully" });
@@ -76,7 +162,7 @@ async function google(req, res) {
       }
     })
     const token = generateToken(user); // Generate token upon successful login
-    res.status(201).json({ message: "User created successfully",token});
+    res.status(201).json({ message: "User created successfully", token });
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ error: "Error creating user" });
@@ -98,7 +184,7 @@ async function login(req, res) {
       return res.status(400).json({ error: "Invalid password" });
     }
     const token = generateToken(user); // Generate token upon successful login
-    res.status(200).json({ message: "Login successful", token}); // Send token in response
+    res.status(200).json({ message: "Login successful", token }); // Send token in response
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).json({ error: "Error logging in" });
@@ -116,7 +202,7 @@ async function googlelogin(req, res) {
       await google(req, res);
     } else {
       const token = generateToken(user); // Generate token upon successful login
-      res.status(200).json({ message: "Login successful",token});
+      res.status(200).json({ message: "Login successful", token });
     }
   } catch (error) {
     console.error("Error logging in:", error);
@@ -158,7 +244,7 @@ async function updateUser(req, res) {
     const { firstName, lastName, email, number, about } = req.body;
     let user;
     if (decoded.id) {
-      if(decoded.googleId){
+      if (decoded.googleId) {
         if (!about || !number) {
           return res.status(400).json({ error: "about or number is missing" });
         }
@@ -182,11 +268,32 @@ async function updateUser(req, res) {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json({ message: 'User information updated successfully'});
+    res.json({ message: 'User information updated successfully' });
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Error updating user" });
   }
 }
+async function resetPassword(req, res) {
+  try {
+    const { email } = req.body;
+    const user = await userExist(email);
+    if (user) {
+      const password = user.password;
+      const decryptedPassword = await decrypt(password);
+      const message = {
+        lastName : user.lastName,
+        email: email,
+        password: decryptedPassword,
+      };
+      await sendMail(email, "Password Reset", message,req,res);
+    } else {
+      return res.status(400).json({ error: "ther is no user with email given" });
+    }
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    res.status(500).json({ error: "Error resetting password" });
+  }
+}
 
-export { createUser, google, login, googlelogin, getUser, updateUser };
+export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword };
