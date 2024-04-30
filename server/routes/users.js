@@ -268,7 +268,7 @@ router.patch('/users/update', updateUser);
  *             type: object
  *             properties:
  *               email:
- *                 type: email
+ *                 type: string
  *                 description: Email address of the user
  *     responses:
  *       200:
