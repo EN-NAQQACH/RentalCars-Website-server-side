@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 const router = Router();
-import { createUser,google,login,googlelogin,getUser,updateUser} from '../controllers/users.js';
+import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword} from '../controllers/users.js';
 /**
  * @swagger
  * tags:
@@ -85,9 +85,9 @@ router.post('/account/login', login);
  * @swagger
  * /api/auth/google:
  *   post:
- *     summary: signup
+ *     summary: signup with google
  *     tags: [Users]
- *     description: signup.
+ *     description: signup with google.
  *     requestBody:
  *       required: true
  *       content:
@@ -131,9 +131,9 @@ router.post('/auth/google', google);
  * @swagger
  * /api/auth/googlelogin:
  *   get:
- *     summary: login
+ *     summary: login with google
  *     tags: [Users]
- *     description: Login.
+ *     description: login with google.
  *     requestBody:
  *       required: true
  *       content:
@@ -252,6 +252,39 @@ router.get('/users/info', getUser);
  *       500:
  *         description: Internal server error
  */
-
 router.patch('/users/update', updateUser);
+/**
+ * @swagger
+ * /api/users/resetpassword:
+ *   post:
+ *     tags: [Users]
+ *     summary: Reset Password
+ *     description: Reset Password by a message in email'suer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: email
+ *                 description: Email address of the user
+ *     responses:
+ *       200:
+ *         description: Email sent successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Email sent successfully
+ *       400:
+ *         description: there is no user with email given
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Failed to send email
+ */
+router.post('/users/resetpassword',resetPassword);
 export default router;
