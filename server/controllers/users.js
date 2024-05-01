@@ -46,37 +46,6 @@ async function sendMail(email, subject, message,req, res) {
     res.status(200).json({ error: "Failed to send email" });
   }
 }
-
-  // async function sendEmail(){
-  //   try {
-  //     const accessToken = await oAuth2Client.getAccessToken();
-  
-  //     const transport = nodemailer.createTransport({
-  //       service: 'gmail',
-  //       auth: {
-  //         type: 'OAuth2',
-  //         user: 'easlycars@gmail.com',
-  //         clientId: CLIENT_ID,
-  //         clientSecret: CLIENT_SECRET,
-  //         refreshToken: REFRESH_TOKEN,
-  //         accessToken: accessToken
-  //       }
-  //     });
-  
-  //     const mailOptions = {
-  //       from: ' EaslyCars <easlycars@gmail.com>',
-  //       to: email,
-  //       subject: subject,
-  //       text: text
-  //     };
-  
-  //     const result = await transport.sendMail(mailOptions);
-  //     return result;
-  //   } catch (error) {
-  //     return error;
-  //   }
-  // };
-
 const generateToken = (user) => {
   const payload = {
     id: user.id,
@@ -102,8 +71,7 @@ async function decrypt(data){
     return decrypteddata
   }
 }catch (error){
-  throw new Error('Invalid password');
-
+  throw new Error('Invalid password')
 }
 }
 async function userExist(email) {
