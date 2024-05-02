@@ -258,7 +258,7 @@ router.patch('/users/update', updateUser);
  * /api/users/resetpassword:
  *   post:
  *     tags: [Users]
- *     summary: Reset Password
+ *     summary: Reset Password by sending email
  *     description: Reset Password by a message in email'suer
  *     requestBody:
  *       required: true
