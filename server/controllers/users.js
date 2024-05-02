@@ -54,7 +54,7 @@ const generateToken = (user) => {
   };
 
   const options = {
-    expiresIn: '24h', // Token expiration time
+    expiresIn: '24h',
   };
 
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, options);
