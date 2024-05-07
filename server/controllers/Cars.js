@@ -390,4 +390,4 @@ async function GetaUserCar(req, res) {
     }
 
 }
-export { AddCar, upload, GetCarsUser, GetaUserCar, UpdateCar };
+export { AddCar, upload, GetCarsUser, GetaUserCar, UpdateCar,GetAllCars };
