@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
 app.use("/api",users);
 app.use("/api", cars);
 app.use('/uploads', express.static('uploads'));
-
+app.use('/userphoto', express.static('userphoto'));
 
 app.listen(5600, () => {
   console.log(`Server is running on port 5500`);
