@@ -208,7 +208,10 @@ async function getUser(req, res) {
       about: user.about,
       googleId: user.googleId,
     };
-    res.status(200).json(userinfo);
+    if(userinfo){
+      res.status(200).json(userinfo);
+      return userinfo;
+    }
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: 'Invalid token' });
