@@ -3,9 +3,7 @@ import express from 'express';
 import swagger from './swagger.js';
 import mongoose from 'mongodb';
 import cors from 'cors';
-
-
-
+import cars from './server/routes/cars.js';
 const app = express();
 
 app.use(cors());
@@ -18,6 +16,8 @@ app.get('/', (req, res) => {
 });
 
 app.use("/api",users);
+app.use("/api", cars);
+app.use('/uploads', express.static('uploads'));
 
 
 app.listen(5600, () => {

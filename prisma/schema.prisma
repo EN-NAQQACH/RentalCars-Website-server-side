@@ -29,6 +29,8 @@ model Car {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
   location      String
   year          Int
+  fuel          String
+  Type          String
   price         Float
   model         String
   make          String
