@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 
 // async function AddCar(req, res) {
 //     try {
@@ -54,10 +56,9 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
-
-async function AddCar(req,res){
+async function AddCar(req, res) {
     try {
-        const { location,fuel, model, year, make, price, description, distance, transmission, maxtrip, mintrip, features, type, carseat } = req.body;
+        const { location, fuel, model, year, make, price, description, distance, transmission, maxtrip, mintrip, features, type, carseat } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -67,8 +68,8 @@ async function AddCar(req,res){
                 location: location,
                 model: model,
                 make: make,
-                fuel:fuel,
-                Type:type,
+                fuel: fuel,
+                Type: type,
                 features: features,
                 year: parseInt(year),
                 price: parseFloat(price),
@@ -97,38 +98,213 @@ async function AddCar(req,res){
 }
 async function UpdateCar(req, res) {
     try {
-
-        const { location, model, year, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat} = req.body;
-
+        const { location,type, model, year,fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const car = await prisma.car.update({
+        const newPhotosAdded = req.files.map(file => "http://localhost:5600/" + file.path);
+        let updatedImageUrls = []
+        let car = await prisma.car.findUnique({
             where: {
-                userId:userId,
-                id:req.params.carId,
-            },
-            data: {
-                location: location,
-                model: model,
-                make: make,
-                features: features,
-                year: parseInt(year),
-                price: parseFloat(price),
-                description: description,
-                distance: distance,
-                transmission: transmission,
-                maxTrip: parseInt(maxtrip),
-                minTrip: parseInt(mintrip),
-                carSeats: parseInt(carseat),
                 userId: userId,
+                id: req.params.carId,
             },
         });
         if (!car) {
-            return res.status(400).json({ error: "Car not updated" });
+            return res.status(404).json({ error: "Car not found" });
         }
-        res.status(200).json({ message: "Car updated" });
-    }catch(error){
+
+        if (deletedImages && deletedImages.length > 0) {
+            updatedImageUrls = car.imageUrls.filter(url => !deletedImages.includes(url));
+           const carupdated = await prisma.car.update({
+                where: {
+                    userId: userId,
+                    id: req.params.carId,
+                },
+                data: {
+                    location: {
+                        set: location
+                    },
+                    model: {
+                        set: model
+                    },
+                    make: {
+                        set: make
+                    },
+                    features: {
+                        set: features
+                    },
+                    year: {
+                        set: parseInt(year)
+                    },
+                    price: {
+                        set: parseFloat(price)
+                    },
+                    description: {
+                        set: description
+                    },
+                    distance: {
+                        set: distance
+                    },
+                    transmission: {
+                        set: transmission
+                    },
+                    maxTrip: {
+                        set: parseInt(maxtrip)
+                    },
+                    minTrip: {
+                        set: parseInt(mintrip)
+                    },
+                    carSeats: {
+                        set: parseInt(carseat)
+                    },
+                    Type:{
+                        set: type,
+                    },
+                    fuel:{
+                        set: fuel,
+                    },
+                    imageUrls: {
+                        set: updatedImageUrls
+                    }
+                }
+            });
+            if(carupdated){
+                res.status(200).json({ message: "Car updated" });
+            }else{
+                res.status(400).json({ error: "Car not updated" });
+            }
+            deletedImages.forEach(url => {
+                const filename = path.basename(url.replace(/\\/g, '/'));
+                const filePath = path.join('uploads', filename)
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error("Error deleting file:", err);
+                    } else {
+                        console.log("File deleted successfully");
+                    }
+                });
+            });
+        }else
+        if (newPhotosAdded && newPhotosAdded.length > 0) {
+            updatedImageUrls = [...car.imageUrls, ...newPhotosAdded];
+            const carupdated = await prisma.car.update({
+                where: {
+                    userId: userId,
+                    id: req.params.carId,
+                },
+                data: {
+                    location: {
+                        set: location
+                    },
+                    model: {
+                        set: model
+                    },
+                    make: {
+                        set: make
+                    },
+                    features: {
+                        set: features
+                    },
+                    year: {
+                        set: parseInt(year)
+                    },
+                    price: {
+                        set: parseFloat(price)
+                    },
+                    description: {
+                        set: description
+                    },
+                    distance: {
+                        set: distance
+                    },
+                    transmission: {
+                        set: transmission
+                    },
+                    maxTrip: {
+                        set: parseInt(maxtrip)
+                    },
+                    minTrip: {
+                        set: parseInt(mintrip)
+                    },
+                    carSeats: {
+                        set: parseInt(carseat)
+                    },
+                    Type:{
+                        set: type,
+                    },
+                    fuel:{
+                        set: fuel,
+                    },
+                    imageUrls: {
+                        set: updatedImageUrls
+                    }
+                }
+            });
+            if(carupdated){
+                res.status(200).json({ message: "Car updated" });
+            }else{
+                res.status(400).json({ error: "Car not updated" });
+            }
+        }else{
+            const carupdated = await prisma.car.update({
+                where: {
+                    userId: userId,
+                    id: req.params.carId,
+                },
+                data: {
+                    location: {
+                        set: location
+                    },
+                    model: {
+                        set: model
+                    },
+                    make: {
+                        set: make
+                    },
+                    features: {
+                        set: features
+                    },
+                    year: {
+                        set: parseInt(year)
+                    },
+                    price: {
+                        set: parseFloat(price)
+                    },
+                    description: {
+                        set: description
+                    },
+                    distance: {
+                        set: distance
+                    },
+                    transmission: {
+                        set: transmission
+                    },
+                    maxTrip: {
+                        set: parseInt(maxtrip)
+                    },
+                    minTrip: {
+                        set: parseInt(mintrip)
+                    },
+                    carSeats: {
+                        set: parseInt(carseat)
+                    },
+                    Type:{
+                        set: type,
+                    },
+                    fuel:{
+                        set: fuel,
+                    }
+                }
+            });
+            if(carupdated){
+                res.status(200).json({ message: "Car updated" });
+            }else{
+                res.status(400).json({ error: "Car not updated" });
+            }
+        }
+
+    } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
         } else {
@@ -189,15 +365,15 @@ async function GetCarsUser(req, res) {
         }
     }
 }
-async function GetaUserCar(req,res){
+async function GetaUserCar(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
         const car = await prisma.car.findUnique({
             where: {
-                userId:userId,
-                id:req.params.carId,
+                userId: userId,
+                id: req.params.carId,
             },
         });
         if (!car) {
@@ -212,6 +388,6 @@ async function GetaUserCar(req,res){
             res.status(500).json({ error: 'Server Error' });
         }
     }
-    
+
 }
-export { AddCar,upload,GetCarsUser,GetaUserCar};
+export { AddCar, upload, GetCarsUser, GetaUserCar, UpdateCar };
