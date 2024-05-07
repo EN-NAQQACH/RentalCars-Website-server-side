@@ -1,7 +1,8 @@
 
 import { Router } from 'express';
 const router = Router();
-import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword} from '../controllers/users.js';
+import multer from 'multer';
+import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload} from '../controllers/users.js';
 /**
  * @swagger
  * tags:
@@ -252,7 +253,7 @@ router.get('/users/info', getUser);
  *       500:
  *         description: Internal server error
  */
-router.patch('/users/update', updateUser);
+router.put('/users/update',upload.single('photo'), updateUser);
 /**
  * @swagger
  * /api/users/resetpassword:

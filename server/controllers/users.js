@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
 import  CryptoJS from 'crypto-js'
 import googleapi from 'googleapis';
+import multer from 'multer';
 dotenv.config();
 
 const CLIENT_ID = "875358823182-rhpg7aaflu3fepvvi6fqms6ulnkmoh06.apps.googleusercontent.com";
@@ -15,6 +16,16 @@ const REFRESH_TOKEN = "1//04OMsSVd2h3gjCgYIARAAGAQSNwF-L9IrQIZTtoJCDS5UoPixAFnJg
 
 const oAuth2Client = new googleapi.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+      cb(null, 'userphoto/');
+  },
+  filename: function (req, file, cb) {
+      cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage: storage });
 
 async function sendMail(email, subject, message,req, res) {
   try
@@ -210,33 +221,46 @@ async function updateUser(req, res) {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     const { firstName, lastName, email, number, about } = req.body;
+    const picture = req.file && "http://localhost:5600/"+req.file.path ;
     let user;
-    if (decoded.id) {
-      if (decoded.googleId) {
-        if (!about || !number) {
-          return res.status(400).json({ error: "about or number is missing" });
-        }
+    if(picture){
+      if (decoded.id) {
+        user = await prisma.user.update({
+          where: {
+            id: decoded.id,
+          },
+          data: {
+            firstName,
+            lastName,
+            email,
+            number,
+            about,
+            picture,
+          },
+        });
       }
-      if (!about || !number) {
-        return res.status(400).json({ error: "about or number is missing" });
+    }else{
+      if (decoded.id) {
+        user = await prisma.user.update({
+          where: {
+            id: decoded.id,
+          },
+          data: {
+            firstName,
+            lastName,
+            email,
+            number,
+            about,
+          },
+        });
       }
-      user = await prisma.user.update({
-        where: {
-          id: decoded.id,
-        },
-        data: {
-          firstName,
-          lastName,
-          email,
-          number,
-          about,
-        },
-      });
+    }
+    if(user){
+      res.status(200).json({ message: "User updated successfully" });
     }
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json({ message: 'User information updated successfully' });
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Error updating user" });
@@ -264,4 +288,4 @@ async function resetPassword(req, res) {
   }
 }
 
-export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword };
+export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload };
