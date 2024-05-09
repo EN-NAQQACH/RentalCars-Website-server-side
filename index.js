@@ -4,6 +4,7 @@ import swagger from './swagger.js';
 import mongoose from 'mongodb';
 import cors from 'cors';
 import cars from './server/routes/cars.js';
+import favorities from './server/routes/favorities.js'
 const app = express();
 
 app.use(cors());
@@ -17,6 +18,7 @@ app.get('/', (req, res) => {
 
 app.use("/api",users);
 app.use("/api", cars);
+app.use("/api",favorities)
 app.use('/uploads', express.static('uploads'));
 app.use('/userphoto', express.static('userphoto'));
 
