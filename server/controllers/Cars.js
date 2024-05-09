@@ -335,6 +335,45 @@ async function DeleteCar(req, res) {
 }
 async function GetAllCars(req, res) {
     try {
+        const token = req.headers.authorization.split(' ')[1];
+        let cars = await prisma.car.findMany();
+
+        if (token) {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userId = decoded.id;
+
+            // Fetch all favorites of the current user
+            const favorites = await prisma.favorite.findMany({
+                where: {
+                    userId: userId,
+                },
+            });
+
+            // Create a map to store the saved status of each car
+            const savedStatusMap = {};
+            favorites.forEach(favorite => {
+                savedStatusMap[favorite.carId] = true; // Car is saved by the user
+            });
+
+            // Add isSaved property to each car
+            cars = cars.map(car => ({
+                ...car,
+                isSaved: savedStatusMap[car.id] || false, // Default to false if not saved
+            }));
+        }
+
+        res.status(200).json(cars);
+    } catch (e) {
+        if (e.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(e);
+            res.status(500).json({ error: 'Server Error' });
+        }
+    }
+}
+async function GetAllCarsUnauth(req, res) {
+    try {
         const cars = await prisma.car.findMany();
         res.status(200).json(cars);
     } catch (error) {
@@ -365,21 +404,26 @@ async function GetCarsUser(req, res) {
         }
     }
 }
-async function GetaUserCar(req, res) {
+async function GetaUserCarUnauth(req, res) {
     try {
-        const token = req.headers.authorization.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        const userId = decoded.id;
         const car = await prisma.car.findUnique({
             where: {
-                userId: userId,
                 id: req.params.carId,
             },
         });
+        let user = await prisma.user.findUnique({
+            where: {
+                id: car.userId,
+            },
+        })
         if (!car) {
             return res.status(404).json({ error: "Car not found" });
         }
-        res.status(200).json(car);
+        const obj = {
+            car: car,
+            user: user,
+        }
+        res.status(200).json(obj);
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
@@ -388,6 +432,132 @@ async function GetaUserCar(req, res) {
             res.status(500).json({ error: 'Server Error' });
         }
     }
-
 }
-export { AddCar, upload, GetCarsUser, GetaUserCar, UpdateCar,GetAllCars };
+async function GetCarAuth(req, res) {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        let car = await prisma.car.findUnique({
+            where: {
+                id: req.params.carId,
+            },
+        });
+        let user = await prisma.user.findUnique({
+            where: {
+                id: car.userId,
+            },
+        })
+        if (!car) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        if (token) {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userId = decoded.id;
+
+            // Check if the car is saved by the user
+            const favorite = await prisma.favorite.findFirst({
+                where: {
+                    userId: userId,
+                    carId: req.params.carId,
+                },
+            });
+
+            // Set isSaved property based on the saved status
+            car = {
+                ...car,
+                isSaved: favorite ? true : false,
+            };
+        }
+        const obj = {
+            car: car,
+            user: user,
+        }
+        res.status(200).json(obj);
+    } catch (e) {
+        if (e.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(e);
+            res.status(500).json({ error: 'Server Error' });
+        }
+    }
+}
+
+// async function DeleteCars(req,res){
+//     try{
+//         const token = req.headers.authorization.split(' ')[1];
+//         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+//         const userId = decoded.id;
+//         const car = await prisma.car.delete({
+//             where: {
+//                 userId: userId,
+//                 id: req.params.carId,
+//             },
+//         });
+//         if(car){
+//             res.status(200).json({message:"car deleted"});
+//         }
+//     }catch(e){
+//         if (e.name === 'JsonWebTokenError') {
+//             return res.status(401).json({ error: "Unauthorized" });
+//         } else {
+//             console.error(e);
+//             res.status(500).json({ error: 'Server Error' });
+//         }
+//     }
+
+
+// }
+async function DeleteCars(req, res) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      const userId = decoded.id;
+      const carId = req.params.carId;
+  
+      // Check if the car exists and belongs to the user
+      const car = await prisma.car.findFirst({
+        where: {
+          userId: userId,
+          id: carId,
+        },
+        include: {
+          favorites: true,
+        },
+      });
+  
+      if (!car) {
+        return res.status(404).json({ error: "Car not found" });
+      }
+  
+      // Delete associated favorite records, if any
+      if (car.favorites && car.favorites.length > 0) {
+        await Promise.all(car.favorites.map(async (favorite) => {
+          await prisma.favorite.delete({
+            where: {
+              id: favorite.id,
+            },
+          });
+        }));
+      }
+  
+      // Delete the car
+      await prisma.car.delete({
+        where: {
+          userId: userId,
+          id: carId,
+        },
+      });
+  
+      res.status(200).json({ message: "Car deleted" });
+    } catch (e) {
+      if (e.name === 'JsonWebTokenError') {
+        return res.status(401).json({ error: "Unauthorized" });
+      } else {
+        console.error(e);
+        res.status(500).json({ error: 'Server Error' });
+      }
+    }
+  }
+  
+export { AddCar, upload, GetCarsUser, GetaUserCarUnauth,GetCarAuth, UpdateCar,GetAllCars,GetAllCarsUnauth,DeleteCars};
