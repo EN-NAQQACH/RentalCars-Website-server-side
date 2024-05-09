@@ -2,7 +2,7 @@
 import { Router } from 'express';
 const router = Router();
 import multer from 'multer';
-import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload} from '../controllers/users.js';
+import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,} from '../controllers/users.js';
 /**
  * @swagger
  * tags:
