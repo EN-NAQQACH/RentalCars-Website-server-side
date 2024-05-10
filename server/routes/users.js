@@ -2,7 +2,7 @@
 import { Router } from 'express';
 const router = Router();
 import multer from 'multer';
-import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,} from '../controllers/users.js';
+import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,getUserCar} from '../controllers/users.js';
 /**
  * @swagger
  * tags:
@@ -288,4 +288,5 @@ router.put('/users/update',upload.single('photo'), updateUser);
  *               message: Failed to send email
  */
 router.post('/users/resetpassword',resetPassword);
+router.get('/users/profile/:userid', getUserCar);
 export default router;

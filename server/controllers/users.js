@@ -116,7 +116,9 @@ async function createUser(req, res) {
         password: passwordencrypted,
       }
     });
-    res.status(201).json({ message: "User created successfully" });
+    if(user){
+      res.status(201).json({ message: "User created successfully" });
+    }
   } catch (error) {
     console.error("Error creating user:", error);
     res.status(500).json({ error: "Error creating user" });
@@ -158,9 +160,17 @@ async function login(req, res) {
     if (!user) {
       return res.status(400).json({ error: "User not found" });
     }
-    await decrypt(password);
+   const passworddecrypted = await decrypt(password);
+   if(passworddecrypted){
+    const isMatch = await bcrypt.compare(passworddecrypted, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid password" });
+    }
+   }
     const token = generateToken(user); // Generate token upon successful login
-    res.status(200).json({ message: "Login successful", token }); // Send token in response
+    if(user){
+      res.status(200).json({ message: "Login successful", token });
+    }
   } catch (error) {
     console.error("Error logging in:", error);
     res.status(500).json({ error: "Error logging in" });
@@ -169,7 +179,7 @@ async function login(req, res) {
 async function googlelogin(req, res) {
   try {
     const { googleId } = req.body;
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
       where: {
         googleId: googleId,
       },
@@ -279,14 +289,60 @@ async function resetPassword(req, res) {
         email: email,
         password: decryptedPassword,
       };
+      if(decryptedPassword){
+        console.log(decryptedPassword);
+      }
       await sendMail(email, "Password Reset", message,req,res);
     } else {
       return res.status(400).json({ error: "ther is no user with email given" });
     }
   } catch (error) {
-    console.error("Error resetting password:", error);
+    console.error("Error resetting password:", error, "password" , decryptedPassword);
     res.status(500).json({ error: "Error resetting password" });
   }
 }
+async function getUserCar(req, res) {
+  try {
+    // Validate request parameters
+    const userId = req.params.userid;
+    if (!userId) {
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
 
-export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload };
+    // Fetch user information
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+
+    // If user not found, return 404
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Fetch cars associated with the user
+    const cars = await prisma.car.findMany({
+      where: {
+        userId: user.id,
+      },
+    });
+
+    // Format response
+    const responseData = {
+      user: user,
+      cars: cars,
+    };
+
+    // Send response
+    res.status(200).json(responseData);
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Error in getUserCar:", error);
+    // Send 500 status code for any internal error
+    res.status(500).json({ error: "Error sending data" });
+  }
+}
+
+
+export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload,getUserCar };
