@@ -98,7 +98,7 @@ async function AddCar(req, res) {
 }
 async function UpdateCar(req, res) {
     try {
-        const { location,type, model, year,fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos } = req.body;
+        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -116,7 +116,7 @@ async function UpdateCar(req, res) {
 
         if (deletedImages && deletedImages.length > 0) {
             updatedImageUrls = car.imageUrls.filter(url => !deletedImages.includes(url));
-           const carupdated = await prisma.car.update({
+            const carupdated = await prisma.car.update({
                 where: {
                     userId: userId,
                     id: req.params.carId,
@@ -158,10 +158,10 @@ async function UpdateCar(req, res) {
                     carSeats: {
                         set: parseInt(carseat)
                     },
-                    Type:{
+                    Type: {
                         set: type,
                     },
-                    fuel:{
+                    fuel: {
                         set: fuel,
                     },
                     imageUrls: {
@@ -169,9 +169,9 @@ async function UpdateCar(req, res) {
                     }
                 }
             });
-            if(carupdated){
+            if (carupdated) {
                 res.status(200).json({ message: "Car updated" });
-            }else{
+            } else {
                 res.status(400).json({ error: "Car not updated" });
             }
             deletedImages.forEach(url => {
@@ -185,124 +185,124 @@ async function UpdateCar(req, res) {
                     }
                 });
             });
-        }else
-        if (newPhotosAdded && newPhotosAdded.length > 0) {
-            updatedImageUrls = [...car.imageUrls, ...newPhotosAdded];
-            const carupdated = await prisma.car.update({
-                where: {
-                    userId: userId,
-                    id: req.params.carId,
-                },
-                data: {
-                    location: {
-                        set: location
+        } else
+            if (newPhotosAdded && newPhotosAdded.length > 0) {
+                updatedImageUrls = [...car.imageUrls, ...newPhotosAdded];
+                const carupdated = await prisma.car.update({
+                    where: {
+                        userId: userId,
+                        id: req.params.carId,
                     },
-                    model: {
-                        set: model
-                    },
-                    make: {
-                        set: make
-                    },
-                    features: {
-                        set: features
-                    },
-                    year: {
-                        set: parseInt(year)
-                    },
-                    price: {
-                        set: parseFloat(price)
-                    },
-                    description: {
-                        set: description
-                    },
-                    distance: {
-                        set: distance
-                    },
-                    transmission: {
-                        set: transmission
-                    },
-                    maxTrip: {
-                        set: parseInt(maxtrip)
-                    },
-                    minTrip: {
-                        set: parseInt(mintrip)
-                    },
-                    carSeats: {
-                        set: parseInt(carseat)
-                    },
-                    Type:{
-                        set: type,
-                    },
-                    fuel:{
-                        set: fuel,
-                    },
-                    imageUrls: {
-                        set: updatedImageUrls
+                    data: {
+                        location: {
+                            set: location
+                        },
+                        model: {
+                            set: model
+                        },
+                        make: {
+                            set: make
+                        },
+                        features: {
+                            set: features
+                        },
+                        year: {
+                            set: parseInt(year)
+                        },
+                        price: {
+                            set: parseFloat(price)
+                        },
+                        description: {
+                            set: description
+                        },
+                        distance: {
+                            set: distance
+                        },
+                        transmission: {
+                            set: transmission
+                        },
+                        maxTrip: {
+                            set: parseInt(maxtrip)
+                        },
+                        minTrip: {
+                            set: parseInt(mintrip)
+                        },
+                        carSeats: {
+                            set: parseInt(carseat)
+                        },
+                        Type: {
+                            set: type,
+                        },
+                        fuel: {
+                            set: fuel,
+                        },
+                        imageUrls: {
+                            set: updatedImageUrls
+                        }
                     }
+                });
+                if (carupdated) {
+                    res.status(200).json({ message: "Car updated" });
+                } else {
+                    res.status(400).json({ error: "Car not updated" });
                 }
-            });
-            if(carupdated){
-                res.status(200).json({ message: "Car updated" });
-            }else{
-                res.status(400).json({ error: "Car not updated" });
-            }
-        }else{
-            const carupdated = await prisma.car.update({
-                where: {
-                    userId: userId,
-                    id: req.params.carId,
-                },
-                data: {
-                    location: {
-                        set: location
+            } else {
+                const carupdated = await prisma.car.update({
+                    where: {
+                        userId: userId,
+                        id: req.params.carId,
                     },
-                    model: {
-                        set: model
-                    },
-                    make: {
-                        set: make
-                    },
-                    features: {
-                        set: features
-                    },
-                    year: {
-                        set: parseInt(year)
-                    },
-                    price: {
-                        set: parseFloat(price)
-                    },
-                    description: {
-                        set: description
-                    },
-                    distance: {
-                        set: distance
-                    },
-                    transmission: {
-                        set: transmission
-                    },
-                    maxTrip: {
-                        set: parseInt(maxtrip)
-                    },
-                    minTrip: {
-                        set: parseInt(mintrip)
-                    },
-                    carSeats: {
-                        set: parseInt(carseat)
-                    },
-                    Type:{
-                        set: type,
-                    },
-                    fuel:{
-                        set: fuel,
+                    data: {
+                        location: {
+                            set: location
+                        },
+                        model: {
+                            set: model
+                        },
+                        make: {
+                            set: make
+                        },
+                        features: {
+                            set: features
+                        },
+                        year: {
+                            set: parseInt(year)
+                        },
+                        price: {
+                            set: parseFloat(price)
+                        },
+                        description: {
+                            set: description
+                        },
+                        distance: {
+                            set: distance
+                        },
+                        transmission: {
+                            set: transmission
+                        },
+                        maxTrip: {
+                            set: parseInt(maxtrip)
+                        },
+                        minTrip: {
+                            set: parseInt(mintrip)
+                        },
+                        carSeats: {
+                            set: parseInt(carseat)
+                        },
+                        Type: {
+                            set: type,
+                        },
+                        fuel: {
+                            set: fuel,
+                        }
                     }
+                });
+                if (carupdated) {
+                    res.status(200).json({ message: "Car updated" });
+                } else {
+                    res.status(400).json({ error: "Car not updated" });
                 }
-            });
-            if(carupdated){
-                res.status(200).json({ message: "Car updated" });
-            }else{
-                res.status(400).json({ error: "Car not updated" });
             }
-        }
 
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
@@ -336,9 +336,8 @@ async function DeleteCar(req, res) {
 async function GetAllCars(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
-        const { days, location, sort, type } = req.query;
+        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype,seats } = req.query;
         let cars = await prisma.car.findMany();
-
         // Filter by days and location if provided
         if (days && location) {
             cars = cars.filter(car => car.maxTrip <= days && car.location.toLocaleLowerCase() === location);
@@ -361,6 +360,46 @@ async function GetAllCars(req, res) {
         // Filter by type if provided and not null
         if (type && type.toLowerCase() !== "all") {
             cars = cars.filter(car => car.Type.toLowerCase() === type.toLowerCase());
+        }
+
+        // filter by price 
+        if (minprice && maxprice) {
+            cars = cars.filter(car => car.price >= minprice && car.price <= maxprice);
+        }
+
+        // Filter by transmission if provided
+        if (transmission) {
+            cars = cars.filter(car => car.transmission.toLowerCase() === transmission.toLowerCase());
+        }
+
+        // Filter by make if provided
+        if (make) {
+            cars = cars.filter(car => car.make.toLowerCase() === make.toLowerCase());
+        }
+
+        //Filter by features if provided
+        const featuresArray = features ? features.split(',') : [];
+        if (featuresArray.length > 0) {
+
+            cars = cars.filter(car => {
+                const carFeatures = car.features.map(feature => feature.split(':')[0]);
+                return featuresArray.every(feature => carFeatures.includes(feature));
+            });
+        }
+
+        // Filter cars by fuel type
+        if (fueltype) {
+            cars = cars.filter(car => car.fuel.toLowerCase() === fueltype.toLowerCase());
+        }
+
+        // Filter cars by number of seats
+        if (seats) {
+            if (seats.toLowerCase() === "more") {
+                const minSeats = 5; 
+                cars = cars.filter(car => car.carSeats > minSeats);
+            } else {
+                cars = cars.filter(car => car.carSeats == parseInt(seats));
+            }
         }
 
         // Add isSaved property to each car if user is authenticated
@@ -396,7 +435,71 @@ async function GetAllCars(req, res) {
 
 async function GetAllCarsUnauth(req, res) {
     try {
-        const cars = await prisma.car.findMany();
+        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype,seats } = req.query;
+        let cars = await prisma.car.findMany();
+        // Filter by days and location if provided
+        if (days && location) {
+            cars = cars.filter(car => car.maxTrip <= days && car.location.toLocaleLowerCase() === location);
+        }
+
+        // Sort by price if provided and valid
+        if (sort && (sort.toLowerCase() === "high" || sort.toLowerCase() === "low")) {
+            cars.sort((a, b) => sort.toLowerCase() === "high" ? b.price - a.price : a.price - b.price);
+        }
+
+        // Sort by creation date if provided and valid
+        if (sort && (sort.toLowerCase() === "oldest" || sort.toLowerCase() === "newest")) {
+            cars.sort((a, b) => {
+                const dateA = new Date(a.createdAt);
+                const dateB = new Date(b.createdAt);
+                return sort.toLowerCase() === "oldest" ? dateA - dateB : dateB - dateA;
+            });
+        }
+
+        // Filter by type if provided and not null
+        if (type && type.toLowerCase() !== "all") {
+            cars = cars.filter(car => car.Type.toLowerCase() === type.toLowerCase());
+        }
+
+        // filter by price 
+        if (minprice && maxprice) {
+            cars = cars.filter(car => car.price >= minprice && car.price <= maxprice);
+        }
+
+        // Filter by transmission if provided
+        if (transmission) {
+            cars = cars.filter(car => car.transmission.toLowerCase() === transmission.toLowerCase());
+        }
+
+        // Filter by make if provided
+        if (make) {
+            cars = cars.filter(car => car.make.toLowerCase() === make.toLowerCase());
+        }
+
+        //Filter by features if provided
+        const featuresArray = features ? features.split(',') : [];
+        if (featuresArray.length > 0) {
+
+            cars = cars.filter(car => {
+                const carFeatures = car.features.map(feature => feature.split(':')[0]);
+                return featuresArray.every(feature => carFeatures.includes(feature));
+            });
+        }
+
+        // Filter cars by fuel type
+        if (fueltype) {
+            cars = cars.filter(car => car.fuel.toLowerCase() === fueltype.toLowerCase());
+        }
+
+        // Filter cars by number of seats
+        if (seats) {
+            if (seats.toLowerCase() === "more") {
+                const minSeats = 5; 
+                cars = cars.filter(car => car.carSeats > minSeats);
+            } else {
+                cars = cars.filter(car => car.carSeats == parseInt(seats));
+            }
+        }
         res.status(200).json(cars);
     } catch (error) {
         console.error(error);
@@ -532,53 +635,53 @@ async function GetCarAuth(req, res) {
 // }
 async function DeleteCars(req, res) {
     try {
-      const token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      const userId = decoded.id;
-      const carId = req.params.carId;
-  
-      // Check if the car exists and belongs to the user
-      const car = await prisma.car.findFirst({
-        where: {
-          userId: userId,
-          id: carId,
-        },
-        include: {
-          favorites: true,
-        },
-      });
-  
-      if (!car) {
-        return res.status(404).json({ error: "Car not found" });
-      }
-  
-      // Delete associated favorite records, if any
-      if (car.favorites && car.favorites.length > 0) {
-        await Promise.all(car.favorites.map(async (favorite) => {
-          await prisma.favorite.delete({
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const userId = decoded.id;
+        const carId = req.params.carId;
+
+        // Check if the car exists and belongs to the user
+        const car = await prisma.car.findFirst({
             where: {
-              id: favorite.id,
+                userId: userId,
+                id: carId,
             },
-          });
-        }));
-      }
-  
-      // Delete the car
-      await prisma.car.delete({
-        where: {
-          userId: userId,
-          id: carId,
-        },
-      });
-  
-      res.status(200).json({ message: "Car deleted" });
+            include: {
+                favorites: true,
+            },
+        });
+
+        if (!car) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        // Delete associated favorite records, if any
+        if (car.favorites && car.favorites.length > 0) {
+            await Promise.all(car.favorites.map(async (favorite) => {
+                await prisma.favorite.delete({
+                    where: {
+                        id: favorite.id,
+                    },
+                });
+            }));
+        }
+
+        // Delete the car
+        await prisma.car.delete({
+            where: {
+                userId: userId,
+                id: carId,
+            },
+        });
+
+        res.status(200).json({ message: "Car deleted" });
     } catch (e) {
-      if (e.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: "Unauthorized" });
-      } else {
-        console.error(e);
-        res.status(500).json({ error: 'Server Error' });
-      }
+        if (e.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(e);
+            res.status(500).json({ error: 'Server Error' });
+        }
     }
 }
 
@@ -637,7 +740,7 @@ async function GetAllCarsByMakeAuth(req, res) {
     }
 }
 async function GetAllCarsByMakeunAuth(req, res) {
-    
+
     try {
         let cars;
         if (req.query.make) {
@@ -652,11 +755,11 @@ async function GetAllCarsByMakeunAuth(req, res) {
             });
             if (cars.length === 0) {
                 return res.status(404).json({ message: "There are no cars with the given make" });
-            }else{
+            } else {
                 res.status(200).json(cars);
             }
         }
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server Error' });
@@ -664,7 +767,7 @@ async function GetAllCarsByMakeunAuth(req, res) {
 
 }
 async function GetAllCarsByDestinataionunAuth(req, res) {
-    
+
     try {
         let cars;
         if (req.query.destination) {
@@ -679,11 +782,11 @@ async function GetAllCarsByDestinataionunAuth(req, res) {
             });
             if (cars.length === 0) {
                 return res.status(404).json({ message: "There are no cars with the given location" });
-            }else{
+            } else {
                 res.status(200).json(cars);
             }
         }
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server Error' });
@@ -746,5 +849,5 @@ async function GetAllCarsByDestinataionAuth(req, res) {
 }
 
 
-  
-export { AddCar, upload, GetCarsUser, GetaUserCarUnauth,GetCarAuth, UpdateCar,GetAllCars,GetAllCarsUnauth,DeleteCars,GetAllCarsByMakeAuth,GetAllCarsByMakeunAuth,GetAllCarsByDestinataionAuth,GetAllCarsByDestinataionunAuth};
+
+export { AddCar, upload, GetCarsUser, GetaUserCarUnauth, GetCarAuth, UpdateCar, GetAllCars, GetAllCarsUnauth, DeleteCars, GetAllCarsByMakeAuth, GetAllCarsByMakeunAuth, GetAllCarsByDestinataionAuth, GetAllCarsByDestinataionunAuth };
