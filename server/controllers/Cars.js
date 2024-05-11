@@ -336,29 +336,50 @@ async function DeleteCar(req, res) {
 async function GetAllCars(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
+        const { days, location, sort, type } = req.query;
         let cars = await prisma.car.findMany();
 
+        // Filter by days and location if provided
+        if (days && location) {
+            cars = cars.filter(car => car.maxTrip <= days && car.location.toLocaleLowerCase() === location);
+        }
+
+        // Sort by price if provided and valid
+        if (sort && (sort.toLowerCase() === "high" || sort.toLowerCase() === "low")) {
+            cars.sort((a, b) => sort.toLowerCase() === "high" ? b.price - a.price : a.price - b.price);
+        }
+
+        // Sort by creation date if provided and valid
+        if (sort && (sort.toLowerCase() === "oldest" || sort.toLowerCase() === "newest")) {
+            cars.sort((a, b) => {
+                const dateA = new Date(a.createdAt);
+                const dateB = new Date(b.createdAt);
+                return sort.toLowerCase() === "oldest" ? dateA - dateB : dateB - dateA;
+            });
+        }
+
+        // Filter by type if provided and not null
+        if (type && type.toLowerCase() !== "all") {
+            cars = cars.filter(car => car.Type.toLowerCase() === type.toLowerCase());
+        }
+
+        // Add isSaved property to each car if user is authenticated
         if (token) {
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
             const userId = decoded.id;
 
-            // Fetch all favorites of the current user
             const favorites = await prisma.favorite.findMany({
-                where: {
-                    userId: userId,
-                },
+                where: { userId },
             });
 
-            // Create a map to store the saved status of each car
             const savedStatusMap = {};
             favorites.forEach(favorite => {
-                savedStatusMap[favorite.carId] = true; // Car is saved by the user
+                savedStatusMap[favorite.carId] = true;
             });
 
-            // Add isSaved property to each car
             cars = cars.map(car => ({
                 ...car,
-                isSaved: savedStatusMap[car.id] || false, // Default to false if not saved
+                isSaved: savedStatusMap[car.id] || false,
             }));
         }
 
@@ -372,6 +393,7 @@ async function GetAllCars(req, res) {
         }
     }
 }
+
 async function GetAllCarsUnauth(req, res) {
     try {
         const cars = await prisma.car.findMany();
@@ -558,6 +580,171 @@ async function DeleteCars(req, res) {
         res.status(500).json({ error: 'Server Error' });
       }
     }
-  }
+}
+
+async function GetAllCarsByMakeAuth(req, res) {
+    try {
+        const token = req.headers.authorization.split(' ')[1];
+        let cars;
+
+        if (req.query.make) {
+            const make = req.query.make.toLowerCase().trim();
+            cars = await prisma.car.findMany({
+                where: {
+                    make: {
+                        contains: make.replace(/-/g, ''),
+                        mode: 'insensitive'
+                    }
+                }
+            });
+            if (cars.length === 0) {
+                return res.status(404).json({ message: "There are no cars with the given make" });
+            }
+        }
+
+        if (token) {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userId = decoded.id;
+
+            // Fetch all favorites of the current user
+            const favorites = await prisma.favorite.findMany({
+                where: {
+                    userId: userId,
+                },
+            });
+
+            // Create a map to store the saved status of each car
+            const savedStatusMap = {};
+            favorites.forEach(favorite => {
+                savedStatusMap[favorite.carId] = true; // Car is saved by the user
+            });
+
+            // Add isSaved property to each car
+            cars = cars.map(car => ({
+                ...car,
+                isSaved: savedStatusMap[car.id] || false, // Default to false if not saved
+            }));
+        }
+
+        res.status(200).json(cars);
+    } catch (e) {
+        if (e.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(e);
+            res.status(500).json({ error: 'Server Error' });
+        }
+    }
+}
+async function GetAllCarsByMakeunAuth(req, res) {
+    
+    try {
+        let cars;
+        if (req.query.make) {
+            const make = req.query.make.toLowerCase().trim();
+            cars = await prisma.car.findMany({
+                where: {
+                    make: {
+                        contains: make.replace(/-/g, ''),
+                        mode: 'insensitive'
+                    }
+                }
+            });
+            if (cars.length === 0) {
+                return res.status(404).json({ message: "There are no cars with the given make" });
+            }else{
+                res.status(200).json(cars);
+            }
+        }
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server Error' });
+    }
+
+}
+async function GetAllCarsByDestinataionunAuth(req, res) {
+    
+    try {
+        let cars;
+        if (req.query.destination) {
+            const destination = req.query.destination.toLowerCase().trim();
+            cars = await prisma.car.findMany({
+                where: {
+                    location: {
+                        contains: destination.replace(/-/g, ''),
+                        mode: 'insensitive'
+                    }
+                }
+            });
+            if (cars.length === 0) {
+                return res.status(404).json({ message: "There are no cars with the given location" });
+            }else{
+                res.status(200).json(cars);
+            }
+        }
+        
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Server Error' });
+    }
+
+}
+async function GetAllCarsByDestinataionAuth(req, res) {
+    try {
+        const token = req.headers.authorization.split(' ')[1];
+        let cars;
+
+        if (req.query.destination) {
+            const destination = req.query.destination.toLowerCase().trim();
+            cars = await prisma.car.findMany({
+                where: {
+                    location: {
+                        contains: destination.replace(/-/g, ''),
+                        mode: 'insensitive'
+                    }
+                }
+            });
+            if (cars.length === 0) {
+                return res.status(404).json({ message: "There are no cars with the given location" });
+            }
+        }
+
+        if (token) {
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userId = decoded.id;
+
+            // Fetch all favorites of the current user
+            const favorites = await prisma.favorite.findMany({
+                where: {
+                    userId: userId,
+                },
+            });
+
+            // Create a map to store the saved status of each car
+            const savedStatusMap = {};
+            favorites.forEach(favorite => {
+                savedStatusMap[favorite.carId] = true; // Car is saved by the user
+            });
+
+            // Add isSaved property to each car
+            cars = cars.map(car => ({
+                ...car,
+                isSaved: savedStatusMap[car.id] || false, // Default to false if not saved
+            }));
+        }
+
+        res.status(200).json(cars);
+    } catch (e) {
+        if (e.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(e);
+            res.status(500).json({ error: 'Server Error' });
+        }
+    }
+}
+
+
   
-export { AddCar, upload, GetCarsUser, GetaUserCarUnauth,GetCarAuth, UpdateCar,GetAllCars,GetAllCarsUnauth,DeleteCars};
+export { AddCar, upload, GetCarsUser, GetaUserCarUnauth,GetCarAuth, UpdateCar,GetAllCars,GetAllCarsUnauth,DeleteCars,GetAllCarsByMakeAuth,GetAllCarsByMakeunAuth,GetAllCarsByDestinataionAuth,GetAllCarsByDestinataionunAuth};
