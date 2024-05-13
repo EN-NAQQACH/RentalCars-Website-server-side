@@ -25,6 +25,8 @@ model User {
   number    String   @default("")
   cars      Car[]
   favorites Favorite[]
+  chats     Chat[]   @relation(fields: [chatIDs], references: [id])
+  chatIDs   String[] @db.ObjectId
 }
 model Car {
   id            String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -55,4 +57,23 @@ model Favorite {
   userId        String    @db.ObjectId
   carId         String    @db.ObjectId
   createdAt     DateTime @default(now())
+}
+model Chat {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  users         User[]    @relation(fields: [userIDs], references: [id])
+  userIDs       String[]  @db.ObjectId
+  time          DateTime  @default(now())
+  seenBy        String[]  @db.ObjectId
+  messages      Message[]
+  lastMessage   String?
+  lastMessageHour String?
+}
+model Message {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  userId    String
+  chat      Chat      @relation(fields: [chatId], references: [id])
+  chatId    String    @db.ObjectId
+  time      DateTime  @default(now())
+  hour      String?
 }
