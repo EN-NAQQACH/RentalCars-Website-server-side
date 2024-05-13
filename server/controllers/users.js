@@ -169,7 +169,7 @@ async function login(req, res) {
    }
     const token = generateToken(user); // Generate token upon successful login
     if(user){
-      res.status(200).json({ message: "Login successful", token });
+      res.status(200).json({ message: "Login successful", token,userId:user.id });
     }
   } catch (error) {
     console.error("Error logging in:", error);
@@ -188,7 +188,7 @@ async function googlelogin(req, res) {
       await google(req, res);
     } else {
       const token = generateToken(user); // Generate token upon successful login
-      res.status(200).json({ message: "Login successful", token });
+      res.status(200).json({ message: "Login successful", token,userId:user.id });
     }
   } catch (error) {
     console.error("Error logging in:", error);

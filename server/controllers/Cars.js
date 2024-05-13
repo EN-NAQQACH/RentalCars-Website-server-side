@@ -421,8 +421,9 @@ async function GetAllCars(req, res) {
                 isSaved: savedStatusMap[car.id] || false,
             }));
         }
-
-        res.status(200).json(cars);
+        setTimeout(() => {
+            res.status(200).json(cars);
+        }, 2000)
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
@@ -432,7 +433,6 @@ async function GetAllCars(req, res) {
         }
     }
 }
-
 async function GetAllCarsUnauth(req, res) {
     try {
         const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype,seats } = req.query;
@@ -500,7 +500,9 @@ async function GetAllCarsUnauth(req, res) {
                 cars = cars.filter(car => car.carSeats == parseInt(seats));
             }
         }
-        res.status(200).json(cars);
+        setTimeout(() => {
+            res.status(200).json(cars);
+        },500)
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server Error' });
@@ -607,7 +609,6 @@ async function GetCarAuth(req, res) {
         }
     }
 }
-
 // async function DeleteCars(req,res){
 //     try{
 //         const token = req.headers.authorization.split(' ')[1];
@@ -684,7 +685,6 @@ async function DeleteCars(req, res) {
         }
     }
 }
-
 async function GetAllCarsByMakeAuth(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
