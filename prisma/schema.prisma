@@ -76,4 +76,5 @@ model Message {
   chatId    String    @db.ObjectId
   time      DateTime  @default(now())
   hour      String?
+  picture   String?
 }

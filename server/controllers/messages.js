@@ -6,11 +6,10 @@ dotenv.config();
 
 async function AddMessage(req, res) {
     try {
-            // sendById = decoded.id;
-            // const chatId = req.params.chatId;
-
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET); 
         const { content } = req.body;
-        const sendById = "66354a61ccc25ec42ad9b54c";
+        const sendById = decoded.id;
         let chat = await prisma.chat.findUnique({
             where: {
                 id: req.params.chatId,
@@ -26,7 +25,7 @@ async function AddMessage(req, res) {
                 content,
                 userId: sendById,
                 chatId:req.params.chatId,
-                hour:currentDate
+                hour:currentDate,
             }
         });
         await prisma.chat.update({
