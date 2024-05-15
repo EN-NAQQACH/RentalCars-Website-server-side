@@ -160,5 +160,57 @@ async function ReadChat(req, res) {
         }
     }
 }
+async function searchByuser(req,res){
+        try {
+            const token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userId = decoded.id;
+            const searchinput = req.query.searchinput || '';
+            let userChats = await prisma.chat.findMany({
+                where: {
+                    userIDs: {
+                        hasSome: [userId]
+                    }
+                }
+            });
+            
+            // Iterate through each chat to find the received user and apply search filter
+            userChats = await Promise.all(userChats.map(async (chat) => {
+                const reseivedById = chat.userIDs.find(id => id !== userId);
+                const reseivedUser = await prisma.user.findUnique({
+                    where: { id: reseivedById },
+                    select: { id: true, firstName: true, lastName: true, picture: true }
+                });
+                
+                // Apply search filter to the received user's information
+                if (reseivedUser) {
+                    const fullName = `${reseivedUser.firstName} ${reseivedUser.lastName}`.toLowerCase();
+                    const searchPattern = searchinput.toLowerCase();
+                    
+                    // Check if either first name or last name matches the search query
+                    if (fullName.includes(searchPattern) || reseivedUser.firstName.toLowerCase().includes(searchPattern) || reseivedUser.lastName.toLowerCase().includes(searchPattern)) {
+                        chat.reseivedUser = reseivedUser;
+                        return chat;
+                    }
+                }
+                
+                return null; // If the received user doesn't match the search query, return null
+            }));
+            
+            // Filter out null values (chats where the received user didn't match the search query)
+            userChats = userChats.filter(chat => chat !== null);
+            setTimeout(() => {
+                res.json(userChats);
+            }, 500)
+        } catch (error) {
+            if (error.name === 'JsonWebTokenError') {
+                return res.status(401).json({ error: "Unauthorized" });
+            } else {
+                console.error(error);
+                res.status(500).json({ error: 'Server Error' });
+            }
+        }
+}
 
-export { GetallChats, AddChat, GetChat,ReadChat }
+
+export { GetallChats, AddChat, GetChat,ReadChat,searchByuser }
