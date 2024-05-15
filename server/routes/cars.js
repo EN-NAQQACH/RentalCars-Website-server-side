@@ -1,12 +1,8 @@
 
 import { Router } from 'express';
 const router = Router();
-import { PrismaClient } from '@prisma/client'
-const prisma = new PrismaClient()
-import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
-import multer from 'multer';
 import { AddCar,upload,GetCarsUser,GetaUserCarUnauth,GetCarAuth,UpdateCar,GetAllCars,GetAllCarsUnauth,DeleteCars,GetAllCarsByMakeAuth,GetAllCarsByMakeunAuth,GetAllCarsByDestinataionAuth,GetAllCarsByDestinataionunAuth} from '../controllers/cars.js';
 
 router.put('/updatecar/:carId',upload.array('photos'), UpdateCar);
