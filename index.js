@@ -7,6 +7,7 @@ import cars from './server/routes/cars.js';
 import favorities from './server/routes/favorities.js'
 import chats from './server/routes/chats.js';
 import messages  from './server/routes/messages.js';
+import reservation from './server/routes/reservation.js';
 const app = express();
 
 app.use(cors());
@@ -25,6 +26,7 @@ app.use("/api", cars);
 app.use("/api",favorities)
 app.use("/api", chats)
 app.use("/api", messages)
+app.use("/api", reservation)
 app.use('/uploads', express.static('uploads'));
 app.use('/userphoto', express.static('userphoto'));
 
