@@ -58,7 +58,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 async function AddCar(req, res) {
     try {
-        const { location, fuel, model, year, make, price, description, distance, transmission, maxtrip, mintrip, features, type, carseat } = req.body;
+        const { location, fuel, model, year, make, price, description, distance, transmission,cardoors,startdate,enddate,features, type, carseat } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -77,8 +77,11 @@ async function AddCar(req, res) {
                 distance: distance,
                 imageUrls: imageUrls,
                 transmission: transmission,
-                maxTrip: parseInt(maxtrip),
-                minTrip: parseInt(mintrip),
+                // maxTrip: parseInt(maxtrip),
+                // minTrip: parseInt(mintrip),
+                doors: parseInt(cardoors),
+                startTripDate: startdate,
+                endTripDate: enddate,
                 carSeats: parseInt(carseat),
                 userId: userId,
             },
@@ -599,7 +602,9 @@ async function GetCarAuth(req, res) {
             car: car,
             user: user,
         }
-        res.status(200).json(obj);
+        setTimeout(() => {
+            res.status(200).json(obj);
+        }, 500)
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });

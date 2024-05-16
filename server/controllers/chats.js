@@ -47,7 +47,9 @@ async function AddChat(req, res) {
                 userIDs: [sendById, reseivedById]
             },
         });
-        res.json(chat);
+        if(chat){
+            res.status(201).json({message: "your host added to your Messages!"});
+        }
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
