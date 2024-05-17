@@ -3,6 +3,8 @@ import { Router } from 'express';
 const router = Router();
 import multer from 'multer';
 import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,getUserCar} from '../controllers/users.js';
+import {contactus} from '../controllers/contactus.js';
+import {addEmailToNewsletters} from '../controllers/newsletter.js';
 /**
  * @swagger
  * tags:
@@ -289,4 +291,6 @@ router.put('/users/update',upload.single('photo'), updateUser);
  */
 router.post('/users/resetpassword',resetPassword);
 router.get('/users/profile/:userid', getUserCar);
+router.post('/contactus', contactus);
+router.post('/newsletter', addEmailToNewsletters);
 export default router;
