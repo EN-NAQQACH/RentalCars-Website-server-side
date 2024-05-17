@@ -540,7 +540,9 @@ async function GetCarsUser(req, res) {
         if (!car) {
             return res.status(404).json({ error: "Car not found" });
         }
-        res.status(200).json(car);
+        setTimeout(() => {
+            res.status(200).json(car);
+        }, 500)
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
