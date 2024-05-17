@@ -95,3 +95,8 @@ model Reservation {
   endDate    String?
   totalPrice Float?
 }
+model newsletter {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  email      String   
+  createdAt  DateTime   @default(now())
+}
