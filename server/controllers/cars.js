@@ -58,7 +58,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 async function AddCar(req, res) {
     try {
-        const { location, fuel, model, year, make, price, description, distance, transmission,cardoors,startdate,enddate,features, type, carseat } = req.body;
+        const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -339,11 +339,11 @@ async function DeleteCar(req, res) {
 async function GetAllCars(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
-        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype,seats } = req.query;
+        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype, seats, startDate, endDate } = req.query;
         let cars = await prisma.car.findMany();
         // Filter by days and location if provided
-        if (days && location) {
-            cars = cars.filter(car => car.maxTrip <= days && car.location.toLocaleLowerCase() === location);
+        if (location) {
+            cars = cars.filter(car => car.location.toLocaleLowerCase() === location);
         }
 
         // Sort by price if provided and valid
@@ -377,7 +377,8 @@ async function GetAllCars(req, res) {
 
         // Filter by make if provided
         if (make) {
-            cars = cars.filter(car => car.make.toLowerCase() === make.toLowerCase());
+            const makeLower = make.toLowerCase();
+            cars = cars.filter(car => car.make.toLowerCase().includes(makeLower));
         }
 
         //Filter by features if provided
@@ -398,12 +399,27 @@ async function GetAllCars(req, res) {
         // Filter cars by number of seats
         if (seats) {
             if (seats.toLowerCase() === "more") {
-                const minSeats = 5; 
+                const minSeats = 5;
                 cars = cars.filter(car => car.carSeats > minSeats);
             } else {
                 cars = cars.filter(car => car.carSeats == parseInt(seats));
             }
         }
+
+        // Filter cars by availability dates
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            // console.log(start,end)
+            cars = cars.filter(car => {
+                const carStartDate = new Date(car.startTripDate);
+                const carEndDate = new Date(car.endTripDate);
+                return (carStartDate >= start && carEndDate <= end) ||
+                    (carStartDate <= start && carEndDate >= start) ||
+                    (carStartDate <= end && carEndDate >= end);
+            });
+        }
+
 
         // Add isSaved property to each car if user is authenticated
         if (token) {
@@ -438,7 +454,7 @@ async function GetAllCars(req, res) {
 }
 async function GetAllCarsUnauth(req, res) {
     try {
-        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype,seats } = req.query;
+        const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype, seats } = req.query;
         let cars = await prisma.car.findMany();
         // Filter by days and location if provided
         if (days && location) {
@@ -497,7 +513,7 @@ async function GetAllCarsUnauth(req, res) {
         // Filter cars by number of seats
         if (seats) {
             if (seats.toLowerCase() === "more") {
-                const minSeats = 5; 
+                const minSeats = 5;
                 cars = cars.filter(car => car.carSeats > minSeats);
             } else {
                 cars = cars.filter(car => car.carSeats == parseInt(seats));
@@ -505,7 +521,7 @@ async function GetAllCarsUnauth(req, res) {
         }
         setTimeout(() => {
             res.status(200).json(cars);
-        },500)
+        }, 500)
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Server Error' });

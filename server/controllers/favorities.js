@@ -77,7 +77,9 @@ async function GetUserFavorites(req, res) {
         }
 
         // Respond with the list of cars saved in favorites
-        res.status(200).json(cars);
+        setTimeout(() => {
+            res.status(200).json(cars);
+        }, 500)
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
