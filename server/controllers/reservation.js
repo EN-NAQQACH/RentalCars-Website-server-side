@@ -129,8 +129,8 @@ async function getReservations(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        const hostId =decoded.id;
-        
+        const hostId = decoded.id;
+
         // Retrieve all reservations where the car's owner is the hostId
         const reservations = await prisma.reservation.findMany({
             where: {
@@ -173,14 +173,14 @@ async function getReservations(req, res) {
 
         // Retrieve the total number of users who reserved from the host
         const totalUsersReserved = await prisma.reservation.groupBy({
-                        by: ['userId'],
-                        where: {
-                            car: {
-                                userId: hostId,
-                            },
-                        },
-                        _count: true,
-                    });
+            by: ['userId'],
+            where: {
+                car: {
+                    userId: hostId,
+                },
+            },
+            _count: true,
+        });
 
         // Construct a new object for each user without circular references
         const reservationsByUser = {};
@@ -249,8 +249,6 @@ async function getReservations(req, res) {
     }
 }
 
-
-
 async function updateReservation(req, res) {
     try {
         const reservationId = req.params.id;
@@ -259,8 +257,8 @@ async function updateReservation(req, res) {
             where: { id: reservationId },
             data: { status: status },
         });
-        if(updatedReservation){
-            res.status(200).json({message: "updated seccufully" })
+        if (updatedReservation) {
+            res.status(200).json({ message: "updated seccufully" })
         }
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
@@ -273,13 +271,22 @@ async function updateReservation(req, res) {
 }
 async function deleteReservation(req, res) {
     try {
-        const reservationId = req.params.id;
-        const deletedReservation = await prisma.reservation.delete({
-            where: { id: reservationId },
-        });
-        if(deletedReservation){
-            res.status(200).json({message: "deleted seccufully" })
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        if (decoded) {
+            const reservationId = req.params.id;
+            const deletedReservation = await prisma.reservation.delete({
+                where: { id: reservationId },
+            });
+            if (deletedReservation) {
+                return setTimeout(() => {
+                    res.status(200).json({ message: "deleted seccufully" })
+                }, 1000)
+            }
+        }else{
+            return res.status(401).json({ error: "Unauthorized" });
         }
+
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
@@ -298,4 +305,4 @@ async function deleteReservation(req, res) {
 //         res.status(200).json(reservation);
 //     }
 // }
-export { createReservation,getReservations,updateReservation,deleteReservation};
+export { createReservation, getReservations, updateReservation, deleteReservation };
