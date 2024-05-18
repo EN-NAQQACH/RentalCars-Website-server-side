@@ -52,7 +52,9 @@ async function sendMail(email, subject, message,req, res) {
       html: '<div><h2>Password Reset Request</h2><p>Hello '+ message.lastName +',</p><p> Weve received a request to reset the password for the EaslyCars account associated with '+ message.email +'</p><p>Your password reset request has been received. Below is your new password:</p><p><strong>'+ message.password +'</strong></p><p>If you did not request this password reset, please contact support immediately.</p><p>Thank you.</p></div> <footer><p>&copy; 2024 EaslyCars. All rights reserved.</p></footer>'
     };
     const result = await transport.sendMail(mailOptions);
-    res.status(200).json({ message: "Email sent successfully" });
+     return setTimeout(() => {
+      res.status(200).json({ message: "Email sent successfully" });
+     }, 1000); 
   }catch (error) {
     res.status(200).json({ error: "Failed to send email" });
   }
@@ -105,7 +107,9 @@ async function createUser(req, res) {
   try {
     const { firstName, lastName, email, password } = req.body;
     if (await userExist(email)) {
-      return res.status(400).json({ error: "User already exists" });
+      return setTimeout(()=>{
+        res.status(400).json({ error: "User already exists" });
+      },1000) 
     }
     const passwordencrypted = await encrypt(password);
     const user = await prisma.user.create({
@@ -117,7 +121,9 @@ async function createUser(req, res) {
       }
     });
     if(user){
-      res.status(201).json({ message: "User created successfully" });
+      return setTimeout(()=>{
+        res.status(201).json({ message: "User created successfully" });
+      },1000) 
     }
   } catch (error) {
     console.error("Error creating user:", error);
@@ -158,18 +164,24 @@ async function login(req, res) {
       },
     });
     if (!user) {
-      return res.status(400).json({ error: "User not found" });
+      return setTimeout(() => {
+        res.status(400).json({ error: "User not found" });
+      }, 1000); 
     }
    const passworddecrypted = await decrypt(password);
    if(passworddecrypted){
     const isMatch = await bcrypt.compare(passworddecrypted, user.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid password" });
+      return setTimeout(() => {
+        res.status(400).json({ error: "Invalid password" });
+      }, 1000); 
     }
    }
     const token = generateToken(user); // Generate token upon successful login
     if(user){
-      res.status(200).json({ message: "Login successful", token,userId:user.id });
+      return setTimeout(()=>{
+        res.status(200).json({ message: "Login successful", token,userId:user.id });
+      },1000) 
     }
   } catch (error) {
     console.error("Error logging in:", error);
@@ -215,6 +227,7 @@ async function getUser(req, res) {
       about: user.about,
       googleId: user.googleId,
       picture: user.picture,
+      reservations : user.reservations
     };
     if(userinfo){
       res.status(200).json(userinfo);
@@ -294,7 +307,9 @@ async function resetPassword(req, res) {
       }
       await sendMail(email, "Password Reset", message,req,res);
     } else {
-      return res.status(400).json({ error: "ther is no user with email given" });
+      return setTimeout(() => {
+        res.status(400).json({ error: "ther is no user with email given" });
+      }, 1000); 
     }
   } catch (error) {
     console.error("Error resetting password:", error, "password" , decryptedPassword);
@@ -343,6 +358,29 @@ async function getUserCar(req, res) {
     res.status(500).json({ error: "Error sending data" });
   }
 }
+async function getMyreservations (req,res){
+  try {
+    const token = req.headers.authorization.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const reservations = await prisma.reservation.findMany({
+      where: {
+        userId: decoded.id,
+      },
+      include: {
+        car: true,
+      },
+    });
+
+    if(reservations){
+      return setTimeout(()=>{
+        res.status(200).json(reservations);
+      },1000)
+    }
+  } catch (error) {
+    console.error("Error getting reservations:", error);
+    res.status(500).json({ error: "Error getting reservations" });
+  }    
+}
 
 
-export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload,getUserCar };
+export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload,getUserCar,getMyreservations };

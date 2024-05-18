@@ -2,7 +2,7 @@
 import { Router } from 'express';
 const router = Router();
 import multer from 'multer';
-import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,getUserCar} from '../controllers/users.js';
+import { createUser,google,login,googlelogin,getUser,updateUser,resetPassword,upload,getUserCar,getMyreservations} from '../controllers/users.js';
 import {contactus} from '../controllers/contactus.js';
 import {addEmailToNewsletters} from '../controllers/newsletter.js';
 /**
@@ -293,4 +293,5 @@ router.post('/users/resetpassword',resetPassword);
 router.get('/users/profile/:userid', getUserCar);
 router.post('/contactus', contactus);
 router.post('/newsletter', addEmailToNewsletters);
+router.get('/user/myreservations', getMyreservations);
 export default router;
