@@ -89,7 +89,9 @@ async function AddCar(req, res) {
         if (!car) {
             return res.status(400).json({ error: "Car not added" });
         }
-        res.status(200).json({ message: "Car added" });
+        return setTimeout(() => {
+            res.status(200).json({ message: "Car added" });
+        }, 1000)
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
@@ -529,19 +531,43 @@ async function GetAllCarsUnauth(req, res) {
 }
 async function GetCarsUser(req, res) {
     try {
+        const { sort,car } = req.query;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const car = await prisma.car.findMany({
+        let cars = await prisma.car.findMany({
             where: {
                 userId: userId,
             },
         });
-        if (!car) {
+        // Sort by price if provided and valid
+        if (sort && (sort.toLowerCase() === "high" || sort.toLowerCase() === "low")) {
+            cars.sort((a, b) => sort.toLowerCase() === "high" ? b.price - a.price : a.price - b.price);
+        }
+
+        // sort by model or year or make
+        if (car) {
+            const carInt = parseInt(car, 10);
+            cars = cars.filter(c => 
+                c.make.toLowerCase().includes(car.toLowerCase()) ||
+                c.model.toLowerCase().includes(car.toLowerCase()) ||
+                (!isNaN(carInt) && c.year === carInt)
+            );
+        }
+
+        // Sort by creation date if provided and valid
+        if (sort && (sort.toLowerCase() === "oldest" || sort.toLowerCase() === "newest")) {
+            cars.sort((a, b) => {
+                const dateA = new Date(a.createdAt);
+                const dateB = new Date(b.createdAt);
+                return sort.toLowerCase() === "oldest" ? dateA - dateB : dateB - dateA;
+            });
+        }
+        if (!cars) {
             return res.status(404).json({ error: "Car not found" });
         }
         setTimeout(() => {
-            res.status(200).json(car);
+            res.status(200).json(cars);
         }, 500)
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
@@ -690,6 +716,19 @@ async function DeleteCars(req, res) {
             }));
         }
 
+        if (car.imageUrls && car.imageUrls.length > 0) {
+            car.imageUrls.forEach(url => {
+                const filename = path.basename(url.replace(/\\/g, '/'));
+                const filePath = path.join('uploads', filename)
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error("Error deleting file:", err);
+                    }
+                });
+            });
+        }
+
+
         // Delete the car
         await prisma.car.delete({
             where: {
@@ -698,7 +737,9 @@ async function DeleteCars(req, res) {
             },
         });
 
-        res.status(200).json({ message: "Car deleted" });
+        return setTimeout(() => {
+            res.status(200).json({ message: "Car deleted" });
+        }, 1000)
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
@@ -870,7 +911,6 @@ async function GetAllCarsByDestinataionAuth(req, res) {
         }
     }
 }
-
 
 
 export { AddCar, upload, GetCarsUser, GetaUserCarUnauth, GetCarAuth, UpdateCar, GetAllCars, GetAllCarsUnauth, DeleteCars, GetAllCarsByMakeAuth, GetAllCarsByMakeunAuth, GetAllCarsByDestinataionAuth, GetAllCarsByDestinataionunAuth };
