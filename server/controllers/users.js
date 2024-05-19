@@ -230,8 +230,9 @@ async function getUser(req, res) {
       reservations : user.reservations
     };
     if(userinfo){
-      res.status(200).json(userinfo);
-      return userinfo;
+      return setTimeout(() => {
+        res.status(200).json(userinfo);
+      }, 600); 
     }
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -280,7 +281,9 @@ async function updateUser(req, res) {
       }
     }
     if(user){
-      res.status(200).json({ message: "User updated successfully" });
+      return setTimeout(() => {
+        res.status(200).json({ message: "User updated successfully" });
+      }, 600);
     }
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -358,10 +361,13 @@ async function getUserCar(req, res) {
     res.status(500).json({ error: "Error sending data" });
   }
 }
-async function getMyreservations (req,res){
+
+async function getMyreservations(req, res) {
   try {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+    const { carName,sort } = req.query;
+
     const reservations = await prisma.reservation.findMany({
       where: {
         userId: decoded.id,
@@ -371,15 +377,41 @@ async function getMyreservations (req,res){
       },
     });
 
-    if(reservations){
-      return setTimeout(()=>{
-        res.status(200).json(reservations);
-      },1000)
+    let filteredReservations = reservations;
+
+    // Filter reservations by car name, year, make, or model if carName query parameter is provided
+    if (carName) {
+      const carNameLower = carName.toLowerCase();
+      filteredReservations = reservations.filter(reservation => {
+        const {year, make, model } = reservation.car;
+        return (
+          year.toString() === carNameLower ||
+          make.toLowerCase().includes(carNameLower) ||
+          model.toLowerCase().includes(carNameLower)
+        );
+      });
     }
+    if (sort) {
+      const sortKey = sort.toLowerCase();
+      filteredReservations.sort((a, b) => {
+        const dateA = new Date(a.startDate);
+        const dateB = new Date(b.startDate);
+        return sortKey === "oldest" ? dateA - dateB : dateB - dateA;
+      });
+    }
+    return res.status(200).json(filteredReservations);
+  
+    // if (filteredReservations.length > 0) {
+    //   return setTimeout(() => {
+    //     res.status(200).json(filteredReservations);
+    //   },1000);
+    // } else {
+    //   res.status(404).json({ error: "No reservations found matching the criteria" });
+    // }
   } catch (error) {
     console.error("Error getting reservations:", error);
     res.status(500).json({ error: "Error getting reservations" });
-  }    
+  }
 }
 
 

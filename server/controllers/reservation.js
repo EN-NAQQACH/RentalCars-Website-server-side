@@ -39,7 +39,7 @@ async function createReservation(req, res) {
 
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ error: "Please login !" });
         } else {
             console.error(e);
             res.status(500).json({ error: 'Server Error' });
@@ -132,7 +132,7 @@ async function getReservations(req, res) {
         const hostId = decoded.id;
 
         // Retrieve all reservations where the car's owner is the hostId
-        const reservations = await prisma.reservation.findMany({
+        let reservations = await prisma.reservation.findMany({
             where: {
                 car: {
                     userId: hostId,
@@ -143,6 +143,11 @@ async function getReservations(req, res) {
                 car: true,
             },
         });
+        // Filter reservations based on the status query parameter
+        if (req.query.search) {
+            reservations = reservations.filter(reservation => reservation.status.toLowerCase() === req.query.search.toLowerCase());
+        }
+        
 
         // Retrieve the total number of cars
         const totalCars = await prisma.car.count({
@@ -230,25 +235,26 @@ async function getReservations(req, res) {
         if (Object.keys(reservationsByUser).length === 0) {
             return res.status(404).json({ error: 'No reservations found.' });
         } else {
-            res.status(200).json({
-                reservationsByUser: Object.values(reservationsByUser),
-                totalCars,
-                totalPendingReservations,
-                totalConfirmedReservations,
-                totalUsersReserved: totalUsersReserved.length,
-            });
+            return setTimeout(() => {
+                res.status(200).json({
+                    reservationsByUser: Object.values(reservationsByUser),
+                    totalCars,
+                    totalPendingReservations,
+                    totalConfirmedReservations,
+                    totalUsersReserved: totalUsersReserved.length,
+                });
+            }, 600);
         }
 
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ error: "Please login !" });
         } else {
             console.error(e);
             res.status(500).json({ error: 'Server Error' });
         }
     }
 }
-
 async function updateReservation(req, res) {
     try {
         const reservationId = req.params.id;
@@ -262,7 +268,7 @@ async function updateReservation(req, res) {
         }
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ error: "Please login !" });
         } else {
             console.error(e);
             res.status(500).json({ error: 'Server Error' });
@@ -284,12 +290,12 @@ async function deleteReservation(req, res) {
                 }, 1000)
             }
         }else{
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ error: "Please login !" });
         }
 
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
-            return res.status(401).json({ error: "Unauthorized" });
+            return res.status(401).json({ error: "Please login !" });
         } else {
             console.error(e);
             res.status(500).json({ error: 'Server Error' });
