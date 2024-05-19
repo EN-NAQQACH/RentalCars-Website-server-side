@@ -16,9 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 
 
 app.use('/api-docs/api', swagger.serve, swagger.setup);
-app.get('/', (req, res) => {
-  res.send('Hello, world!');
-});
+app.use('/',swagger.serve, swagger.setup )
 
 
 app.use("/api",users);
