@@ -1,5 +1,5 @@
 node_modules
-./uploads
-./userphoto
+uploads
+userphoto
 # Keep environment variables out of version control
 .env
