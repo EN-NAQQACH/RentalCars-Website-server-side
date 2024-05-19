@@ -442,9 +442,9 @@ async function GetAllCars(req, res) {
                 isSaved: savedStatusMap[car.id] || false,
             }));
         }
-        setTimeout(() => {
+       return setTimeout(() => {
             res.status(200).json(cars);
-        }, 2000)
+        }, 1000)
     } catch (e) {
         if (e.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });

@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
-import { GetallChats,AddChat,GetChat,ReadChat,searchByuser} from '../controllers/chats.js'
+import { GetallChats,AddChat,GetChat,ReadChat,searchByuser,AddChatandMessage} from '../controllers/chats.js'
 
 
 router.get('/chats',GetallChats);
@@ -13,5 +13,6 @@ router.post('/chats/Add', AddChat);
 router.get('/chats/:chatId', GetChat);
 router.put('/chats/:chatId', ReadChat);
 router.get('/chats/search/getUsers', searchByuser);
+router.post('/chats/AddandMessage', AddChatandMessage);
 
 export default router;
