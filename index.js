@@ -14,10 +14,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
 app.use('/api-docs/api', swagger.serve, swagger.setup);
-app.use('/',swagger.serve, swagger.setup )
-
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
 
 app.use("/api",users);
 app.use("/api", cars);

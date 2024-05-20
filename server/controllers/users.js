@@ -413,6 +413,9 @@ async function getMyreservations(req, res) {
     res.status(500).json({ error: "Error getting reservations" });
   }
 }
+async function logout (req,res){
+  
+}
 
 
 export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload,getUserCar,getMyreservations };

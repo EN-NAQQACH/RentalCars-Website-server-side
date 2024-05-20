@@ -255,7 +255,9 @@ async function AddChatandMessage(req, res) {
                 },
                 data: { seenBy: [sendById], lastMessage: content, lastMessageHour: currentDate }
             });
-            res.status(200).json({ message: "your host added to your Messages!", chatId: chat.id },);
+            return setTimeout(() => {
+                res.status(200).json({ message: "your host added to your Messages!", chatId: chat.id },);
+            }, 1000);
         }else{
             res.status(401).json({ message: "please Log in !" });
         }
