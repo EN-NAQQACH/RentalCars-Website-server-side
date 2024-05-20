@@ -72,20 +72,23 @@ const generateToken = (user) => {
 
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, options);
 };
-async function encrypt(data){
-  const ciphertext =  CryptoJS.AES.encrypt(data, process.env.ACCESS_TOKEN_SECRET).toString();
+// Encrypt function
+async function encrypt(data) {
+  const ciphertext = CryptoJS.AES.encrypt(data, process.env.ACCESS_TOKEN_SECRET).toString();
   return ciphertext;
 }
-async function decrypt(data){
-  try{
-  const bytes = CryptoJS.AES.decrypt(data, process.env.ACCESS_TOKEN_SECRET);
-  if(bytes.sigBytes >0){
-    const decrypteddata = bytes.toString(CryptoJS.enc.Utf8);
-    return decrypteddata
+
+// Decrypt function
+async function decrypt(data) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(data, process.env.ACCESS_TOKEN_SECRET);
+    if (bytes.sigBytes > 0) {
+      const decryptedData = bytes.toString(CryptoJS.enc.Utf8);
+      return decryptedData;
+    }
+  } catch (error) {
+    throw new Error('Invalid password');
   }
-}catch (error){
-  throw new Error('Invalid password')
-}
 }
 async function userExist(email) {
   try {
@@ -158,34 +161,49 @@ async function google(req, res) {
 async function login(req, res) {
   try {
     const { email, password } = req.body;
-    const user = await prisma.user.findUnique({
-      where: {
-        email: email,
-      },
+    
+    // Find user by email
+    const user = await prisma.user.findFirst({
+      where: { email: email },
     });
+    
+    // If user is not found
     if (!user) {
       return setTimeout(() => {
-        res.status(400).json({ error: "User not found" });
-      }, 1000); 
+        res.status(400).json({ error: "Invalid username or password" });
+      }, 1000);
     }
-   const passworddecrypted = await decrypt(password);
-   if(passworddecrypted){
-    const isMatch = await bcrypt.compare(passworddecrypted, user.password);
-    if (!isMatch) {
+
+    // Decrypt the stored password
+    let storedPasswordDecrypted;
+    try {
+      storedPasswordDecrypted = await decrypt(user.password);
+      console.log('Decrypted stored password:', storedPasswordDecrypted); // Debug log
+    } catch (error) {
       return setTimeout(() => {
-        res.status(400).json({ error: "Invalid password" });
-      }, 1000); 
+        res.status(400).json({ error: "Invalid username or password" });
+      }, 1000);
     }
-   }
-    const token = generateToken(user); // Generate token upon successful login
-    if(user){
-      return setTimeout(()=>{
-        res.status(200).json({ message: "Login successful", token,userId:user.id });
-      },1000) 
+
+    // Compare decrypted password with stored decrypted password
+    if (password !== storedPasswordDecrypted) {
+      return setTimeout(() => {
+        res.status(400).json({ error: "Invalid username or password" });
+      }, 1000);
     }
+
+    // Generate token upon successful login
+    const token = generateToken(user);
+
+    // Send successful login response
+    return setTimeout(() => {
+      res.status(200).json({ message: "Login successful", token, userId: user.id });
+    }, 1000);
+    
   } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({ error: "Error logging in" });
+    return setTimeout(() => {
+      res.status(500).json({ error: "Error logging in" });
+    }, 1000);
   }
 }
 async function googlelogin(req, res) {
