@@ -77,7 +77,6 @@ async function encrypt(data) {
   const ciphertext = CryptoJS.AES.encrypt(data, process.env.ACCESS_TOKEN_SECRET).toString();
   return ciphertext;
 }
-
 // Decrypt function
 async function decrypt(data) {
   try {

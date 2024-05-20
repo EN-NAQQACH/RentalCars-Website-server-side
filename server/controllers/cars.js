@@ -459,8 +459,8 @@ async function GetAllCarsUnauth(req, res) {
         const { days, location, sort, type, minprice, maxprice, transmission, make, features, fueltype, seats } = req.query;
         let cars = await prisma.car.findMany();
         // Filter by days and location if provided
-        if (days && location) {
-            cars = cars.filter(car => car.maxTrip <= days && car.location.toLocaleLowerCase() === location);
+        if (location) {
+            cars = cars.filter(car => car.location.toLocaleLowerCase() === location);
         }
 
         // Sort by price if provided and valid
