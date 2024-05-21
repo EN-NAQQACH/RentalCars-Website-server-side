@@ -3,8 +3,7 @@ const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
-import pkg from 'cloudinary';
-const { v2: cloudinary } = pkg;
+import {v2 as cloudinary} from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import multer from 'multer';
 import fs from 'fs';
@@ -78,7 +77,6 @@ async function AddCar(req, res) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
         } else {
-            console.error(error);
             res.status(500).json({ error: 'Server Error' });
         }
     }
