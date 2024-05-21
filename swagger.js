@@ -18,7 +18,7 @@ const swaggerSpec = swaggerJSDoc(options);
 
 const serve = swaggerUi.serve;
 const setup = swaggerUi.setup(swaggerSpec, {
-    customCss: CSS_URL,
+    customCssUrl: CSS_URL,
 });
 
 export default {
