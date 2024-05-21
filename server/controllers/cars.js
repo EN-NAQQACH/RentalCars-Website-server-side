@@ -62,7 +62,7 @@ async function AddCar(req, res) {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const imageUrls = req.files.map(file => "http://localhost:5600/" + file.path);
+        const imageUrls = req.files.map(file => "https://easlycars-server.vercel.app/" + file.path);
         const car = await prisma.car.create({
             data: {
                 location: location,
@@ -107,7 +107,7 @@ async function UpdateCar(req, res) {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const newPhotosAdded = req.files.map(file => "http://localhost:5600/" + file.path);
+        const newPhotosAdded = req.files.map(file => "https://easlycars-server.vercel.app/" + file.path);
         let updatedImageUrls = []
         let car = await prisma.car.findUnique({
             where: {
