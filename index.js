@@ -24,8 +24,10 @@ app.use("/api",favorities)
 app.use("/api", chats)
 app.use("/api", messages)
 app.use("/api", reservation)
-app.use('/uploads', express.static('uploads'));
-app.use('/userphoto', express.static('userphoto'));
+// app.use('/uploads', express.static('uploads'));
+// app.use('/userphoto', express.static('userphoto'));
+app.use('/uploads', express.static('.vercel/output/static/uploads'));
+app.use('/userphoto', express.static('.vercel/output/static/userphoto'));
 
 app.listen(5600, () => {
   console.log(`Server is running on port 5500`);
