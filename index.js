@@ -25,24 +25,24 @@ app.use("/api", favorities)
 app.use("/api", chats)
 app.use("/api", messages)
 app.use("/api", reservation)
-app.use('/uploads', express.static('uploads'));
-app.use('/userphoto', express.static('userphoto'));
+// app.use('/uploads', express.static('uploads'));
+// app.use('/userphoto', express.static('userphoto'));
 // app.use('/uploads', express.static('.vercel/output/static/uploads'));
 // app.use('/userphoto', express.static('.vercel/output/static/userphoto'));
 
 
-// app.get('/uploads/:file', (req, res) => {
-//   const fileName = req.params.file;
-//   const filePath = path.join(process.cwd(), 'uploads', fileName); // Adjust the path here
-//   res.sendFile(filePath);
-// });
+app.get('/uploads/:file', (req, res) => {
+  const fileName = req.params.file;
+  const filePath = path.join(process.cwd(), 'uploads', fileName); // Adjust the path here
+  res.sendFile(filePath);
+});
 
-// // Serve static files from the 'userphoto' directory
-// app.get('/userphoto/:file', (req, res) => {
-//   const fileName = req.params.file;
-//   const filePath = path.join(process.cwd(), 'userphoto', fileName); // Adjust the path here
-//   res.sendFile(filePath);
-// });
+// Serve static files from the 'userphoto' directory
+app.get('/userphoto/:file', (req, res) => {
+  const fileName = req.params.file;
+  const filePath = path.join(process.cwd(), 'userphoto', fileName); // Adjust the path here
+  res.sendFile(filePath);
+});
 app.listen(5600, () => {
   console.log(`Server is running on port 5500`);
 });
