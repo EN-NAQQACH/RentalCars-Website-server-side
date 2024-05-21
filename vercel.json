@@ -12,12 +12,7 @@
       "dest": "/"
     }
   ],
-  "build": {
-    "env": {
-      "DATABASE_URL": "mongodb+srv://Mohssine:q0kmBozuNfGElyYD@cluster0.hvjboub.mongodb.net/RenatalCars" 
-    },
-    "commands": {
-      "build": "npm install && npx prisma generate && npm run build"
-    }
+  "env": {
+    "DATABASE_URL": "mongodb+srv://Mohssine:q0kmBozuNfGElyYD@cluster0.hvjboub.mongodb.net/RenatalCars"
   }
 }
