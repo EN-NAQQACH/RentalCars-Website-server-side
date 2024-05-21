@@ -7,6 +7,7 @@ import cars from './server/routes/cars.js';
 import favorities from './server/routes/favorities.js'
 import chats from './server/routes/chats.js';
 import messages from './server/routes/messages.js';
+import path from 'path';
 import reservation from './server/routes/reservation.js';
 const app = express();
 
@@ -28,15 +29,20 @@ app.use("/api", reservation)
 // app.use('/userphoto', express.static('userphoto'));
 // app.use('/uploads', express.static('.vercel/output/static/uploads'));
 // app.use('/userphoto', express.static('.vercel/output/static/userphoto'));
+
+
+// Serve static files from the 'uploads' directory
 app.get('/uploads/:file', (req, res) => {
   const fileName = req.params.file;
-  res.sendFile(`${__dirname}/.vercel/output/static/uploads/${fileName}`);
+  const filePath = path.join(process.cwd(), '.vercel/output/static/uploads', fileName);
+  res.sendFile(filePath);
 });
 
 // Serve static files from the 'userphoto' directory
 app.get('/userphoto/:file', (req, res) => {
   const fileName = req.params.file;
-  res.sendFile(`${__dirname}/.vercel/output/static/userphoto/${fileName}`);
+  const filePath = path.join(process.cwd(), '.vercel/output/static/userphoto', fileName);
+  res.sendFile(filePath);
 });
 app.listen(5600, () => {
   console.log(`Server is running on port 5500`);
