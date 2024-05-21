@@ -13,8 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-const CSS_URL = "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.1.0/swagger-ui.min.css";
-app.use('/api-docs/api', swagger.serve, swagger.setup(specs, { customCssUrl: CSS_URL }));
+app.use('/api-docs/api', swagger.serve, swagger.setup);
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
