@@ -10,14 +10,6 @@
     {
       "src": "/(.*)",
       "dest": "/index.js"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "/uploads/$1"
-    },
-    {
-      "src": "/userphoto/(.*)",
-      "dest": "/userphoto/$1"
     }
   ],
   "env": {
