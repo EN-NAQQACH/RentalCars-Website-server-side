@@ -1,15 +1,23 @@
 {
-    "version": 2,
-    "builds": [
-      {
-        "src": "./index.js",
-        "use": "@vercel/node"
-      }
-    ],
-    "routes": [
-      {
-        "src": "/(.*)",
-        "dest": "/"
-      }
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "./index.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/"
+    }
+  ],
+  "build": {
+    "env": {
+      "DATABASE_URL": "mongodb+srv://Mohssine:q0kmBozuNfGElyYD@cluster0.hvjboub.mongodb.net/RenatalCars" 
+    },
+    "commands": {
+      "build": "npm install && npx prisma generate && npm run build"
+    }
+  }
 }
