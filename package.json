@@ -3,7 +3,7 @@
     "@prisma/client": "^5.13.0",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
-    "cloudinary": "^2.2.0",
+    "cloudinary": "^1.21.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
@@ -30,7 +30,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "prisma generate",
-    "install:legacy": "npm install --legacy-peer-deps",
     "build": "npm install && npx prisma generate && npm run build"
   },
   "keywords": [],
