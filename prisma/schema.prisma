@@ -23,6 +23,9 @@ model User {
   googleId  String   @default("")
   about     String   @default("")
   number    String   @default("")
+  city      String?
+  zipcode   String?
+  address   String?
   cars      Car[]
   favorites Favorite[]
   chats     Chat[]   @relation(fields: [chatIDs], references: [id])
