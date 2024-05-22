@@ -255,7 +255,7 @@ router.get('/users/info', getUser);
  *       500:
  *         description: Internal server error
  */
-router.put('/users/update',upload.single('photo'), updateUser);
+router.put('/users/update',upload.array('photo'), updateUser);
 /**
  * @swagger
  * /api/users/resetpassword:

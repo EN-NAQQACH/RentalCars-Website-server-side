@@ -4,8 +4,9 @@ const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
-import  CryptoJS from 'crypto-js'
+import CryptoJS from 'crypto-js'
 import googleapi from 'googleapis';
+import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 dotenv.config();
 
@@ -17,21 +18,26 @@ const REFRESH_TOKEN = "1//04OMsSVd2h3gjCgYIARAAGAQSNwF-L9IrQIZTtoJCDS5UoPixAFnJg
 const oAuth2Client = new googleapi.google.auth.OAuth2(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI);
 oAuth2Client.setCredentials({ refresh_token: REFRESH_TOKEN });
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-      cb(null, 'userphoto/');
-  },
-  filename: function (req, file, cb) {
-      cb(null, Date.now() + '-' + file.originalname);
-  }
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//       cb(null, 'userphoto/');
+//   },
+//   filename: function (req, file, cb) {
+//       cb(null, Date.now() + '-' + file.originalname);
+//   }
+// });
+// const upload = multer({ storage: storage });
+cloudinary.config({
+  cloud_name: process.env.CLOUD_NAME,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
-const upload = multer({ storage: storage });
-
-async function sendMail(email, subject, message,req, res) {
-  try
-  {
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+async function sendMail(email, subject, message, req, res) {
+  try {
     const accessToken = await oAuth2Client.getAccessToken();
-  
+
     const transport = nodemailer.createTransport({
       service: 'gmail',
       auth: {
@@ -49,13 +55,13 @@ async function sendMail(email, subject, message,req, res) {
       to: email,
       subject: subject,
       text: 'Password Reset',
-      html: '<div><h2>Password Reset Request</h2><p>Hello '+ message.lastName +',</p><p> Weve received a request to reset the password for the EaslyCars account associated with '+ message.email +'</p><p>Your password reset request has been received. Below is your new password:</p><p><strong>'+ message.password +'</strong></p><p>If you did not request this password reset, please contact support immediately.</p><p>Thank you.</p></div> <footer><p>&copy; 2024 EaslyCars. All rights reserved.</p></footer>'
+      html: '<div><h2>Password Reset Request</h2><p>Hello ' + message.lastName + ',</p><p> Weve received a request to reset the password for the EaslyCars account associated with ' + message.email + '</p><p>Your password reset request has been received. Below is your new password:</p><p><strong>' + message.password + '</strong></p><p>If you did not request this password reset, please contact support immediately.</p><p>Thank you.</p></div> <footer><p>&copy; 2024 EaslyCars. All rights reserved.</p></footer>'
     };
     const result = await transport.sendMail(mailOptions);
-     return setTimeout(() => {
+    return setTimeout(() => {
       res.status(200).json({ message: "Email sent successfully" });
-     }, 1000); 
-  }catch (error) {
+    }, 1000);
+  } catch (error) {
     res.status(200).json({ error: "Failed to send email" });
   }
 }
@@ -109,9 +115,9 @@ async function createUser(req, res) {
   try {
     const { firstName, lastName, email, password } = req.body;
     if (await userExist(email)) {
-      return setTimeout(()=>{
+      return setTimeout(() => {
         res.status(400).json({ error: "User already exists" });
-      },1000) 
+      }, 1000)
     }
     const passwordencrypted = await encrypt(password);
     const user = await prisma.user.create({
@@ -122,10 +128,10 @@ async function createUser(req, res) {
         password: passwordencrypted,
       }
     });
-    if(user){
-      return setTimeout(()=>{
+    if (user) {
+      return setTimeout(() => {
         res.status(201).json({ message: "User created successfully" });
-      },1000) 
+      }, 1000)
     }
   } catch (error) {
     console.error("Error creating user:", error);
@@ -160,12 +166,12 @@ async function google(req, res) {
 async function login(req, res) {
   try {
     const { email, password } = req.body;
-    
+
     // Find user by email
     const user = await prisma.user.findFirst({
       where: { email: email },
     });
-    
+
     // If user is not found
     if (!user) {
       return setTimeout(() => {
@@ -198,7 +204,7 @@ async function login(req, res) {
     return setTimeout(() => {
       res.status(200).json({ message: "Login successful", token, userId: user.id });
     }, 1000);
-    
+
   } catch (error) {
     return setTimeout(() => {
       res.status(500).json({ error: "Error logging in" });
@@ -217,7 +223,7 @@ async function googlelogin(req, res) {
       await google(req, res);
     } else {
       const token = generateToken(user); // Generate token upon successful login
-      res.status(200).json({ message: "Login successful", token,userId:user.id });
+      res.status(200).json({ message: "Login successful", token, userId: user.id });
     }
   } catch (error) {
     console.error("Error logging in:", error);
@@ -227,14 +233,22 @@ async function getUser(req, res) {
   try {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: {
         id: decoded.id,
+      },
+      include: {
+        cars: true,
       },
     });
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    // let cars = await prisma.car.findMany({
+    //   where: {
+    //     userId: user.id,
+    //   },
+    // });
     const userinfo = {
       id: user.id,
       email: user.email,
@@ -244,12 +258,17 @@ async function getUser(req, res) {
       about: user.about,
       googleId: user.googleId,
       picture: user.picture,
-      reservations : user.reservations
+      reservations: user.reservations,
+      zipcode: user.zipcode,
+      city: user.city,
+      cars: user.cars,
+      address: user.address,
+      cars: user.cars,
     };
-    if(userinfo){
+    if (userinfo) {
       return setTimeout(() => {
         res.status(200).json(userinfo);
-      }, 600); 
+      }, 600);
     }
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -262,49 +281,59 @@ async function updateUser(req, res) {
   try {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const { firstName, lastName, email, number, about } = req.body;
-    const picture = req.file && "http://localhost:5600/"+req.file.path ;
-    let user;
-    if(picture){
-      if (decoded.id) {
-        user = await prisma.user.update({
-          where: {
-            id: decoded.id,
-          },
-          data: {
-            firstName,
-            lastName,
-            email,
-            number,
-            about,
-            picture,
-          },
+    const { firstName, lastName, email, number, about, zipcode, city, address } = req.body;
+
+    // Check if there are uploaded files
+    let picture = null;
+
+    // Check if there are uploaded files
+    if (req.files && req.files.length > 0) {
+      // Upload new picture(s) to Cloudinary
+      const uploadPromises = req.files.map(file => {
+        return new Promise((resolve, reject) => {
+          cloudinary.uploader.upload_stream({ folder: 'user_photos' }, (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }).end(file.buffer);
         });
+      });
+
+      // Wait for all uploads to complete
+      const uploadedPictures = await Promise.all(uploadPromises);
+      // Use the last uploaded picture (assuming single upload)
+      picture = uploadedPictures.pop();
+
+      // Retrieve previous user picture from the database
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { picture: true }
+      });
+
+      // If a previous picture exists, remove it from Cloudinary
+      if (user.picture) {
+        const publicId = user.picture.split('/').pop().split('.')[0];
+        await cloudinary.uploader.destroy(publicId);
       }
-    }else{
-      if (decoded.id) {
-        user = await prisma.user.update({
-          where: {
-            id: decoded.id,
-          },
-          data: {
-            firstName,
-            lastName,
-            email,
-            number,
-            about,
-          },
-        });
-      }
     }
-    if(user){
-      return setTimeout(() => {
-        res.status(200).json({ message: "User updated successfully" });
-      }, 600);
-    }
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+
+    // Update user data in the database
+    const updatedUser = await prisma.user.update({
+      where: { id: decoded.id },
+      data: {
+        firstName,
+        lastName,
+        email,
+        number,
+        about,
+        picture,
+        zipcode,
+        city,
+        address,
+      },
+    });
+
+    // Respond with success message
+    res.status(200).json({ message: 'User updated successfully' });
   } catch (error) {
     console.error("Error updating user:", error);
     res.status(500).json({ error: "Error updating user" });
@@ -318,21 +347,21 @@ async function resetPassword(req, res) {
       const password = user.password;
       const decryptedPassword = await decrypt(password);
       const message = {
-        lastName : user.lastName,
+        lastName: user.lastName,
         email: email,
         password: decryptedPassword,
       };
-      if(decryptedPassword){
+      if (decryptedPassword) {
         console.log(decryptedPassword);
       }
-      await sendMail(email, "Password Reset", message,req,res);
+      await sendMail(email, "Password Reset", message, req, res);
     } else {
       return setTimeout(() => {
         res.status(400).json({ error: "ther is no user with email given" });
-      }, 1000); 
+      }, 1000);
     }
   } catch (error) {
-    console.error("Error resetting password:", error, "password" , decryptedPassword);
+    console.error("Error resetting password:", error, "password", decryptedPassword);
     res.status(500).json({ error: "Error resetting password" });
   }
 }
@@ -383,7 +412,7 @@ async function getMyreservations(req, res) {
   try {
     const token = req.headers.authorization.split(' ')[1];
     const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-    const { carName,sort } = req.query;
+    const { carName, sort } = req.query;
 
     const reservations = await prisma.reservation.findMany({
       where: {
@@ -400,7 +429,7 @@ async function getMyreservations(req, res) {
     if (carName) {
       const carNameLower = carName.toLowerCase();
       filteredReservations = reservations.filter(reservation => {
-        const {year, make, model } = reservation.car;
+        const { year, make, model } = reservation.car;
         return (
           year.toString() === carNameLower ||
           make.toLowerCase().includes(carNameLower) ||
@@ -417,7 +446,7 @@ async function getMyreservations(req, res) {
       });
     }
     return res.status(200).json(filteredReservations);
-  
+
     // if (filteredReservations.length > 0) {
     //   return setTimeout(() => {
     //     res.status(200).json(filteredReservations);
@@ -430,9 +459,9 @@ async function getMyreservations(req, res) {
     res.status(500).json({ error: "Error getting reservations" });
   }
 }
-async function logout (req,res){
-  
+async function logout(req, res) {
+
 }
 
 
-export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword,upload,getUserCar,getMyreservations };
+export { createUser, google, login, googlelogin, getUser, updateUser, resetPassword, upload, getUserCar, getMyreservations };
