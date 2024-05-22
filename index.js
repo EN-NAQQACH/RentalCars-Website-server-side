@@ -44,5 +44,5 @@ app.get('/userphoto/:file', (req, res) => {
   res.sendFile(filePath);
 });
 app.listen(5600, () => {
-  console.log(`Server is running on port 5500`);
+  console.log(`Server is running on port 5600`);
 });

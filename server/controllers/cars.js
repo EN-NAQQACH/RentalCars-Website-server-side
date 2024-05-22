@@ -3,8 +3,7 @@ const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
-import {v2 as cloudinary} from 'cloudinary';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
@@ -12,17 +11,17 @@ import path from 'path';
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.API_KEY,
-    api_secret: process.env.API_SECRET
-});
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: 'uploads', // Cloudinary folder name
-      public_id: (req, file) => Date.now().toString() + '-' + file.originalname.replace(/\.[^.]+$/, ''), // Remove file extension before adding the timestamp
-    },
+    api_secret: process.env.API_SECRET,
   });
+// const storage = new CloudinaryStorage({
+//     cloudinary: cloudinary,
+//     params: {
+//       folder: 'uploads', // Cloudinary folder name
+//       public_id: (req, file) => Date.now().toString() + '-' + file.originalname.replace(/\.[^.]+$/, ''), // Remove file extension before adding the timestamp
+//     },
+//   });
 
-const upload = multer({ storage: storage });
+// const upload = multer({ storage: storage });
 // const storage = multer.diskStorage({
 //     destination: function (req, file, cb) {
 //         cb(null, 'uploads/');
@@ -32,18 +31,32 @@ const upload = multer({ storage: storage });
 //     }
 // });
 // const upload = multer({ storage: storage });
+// const imageUrls = await Promise.all(
+//     req.files.map(async (file) => {
+//         return file.path; // The path is the Cloudinary URL
+//     })
+// );
+// const imageUrls = req.files.map(file => "https://easlycars-server.vercel.app/" + file.path);
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 async function AddCar(req, res) {
     try {
         const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const imageUrls = await Promise.all(
-            req.files.map(async (file) => {
-                return file.path; // The path is the Cloudinary URL
-            })
-        );
-        // const imageUrls = req.files.map(file => "https://easlycars-server.vercel.app/" + file.path);
+        const imageUrls = [];
+        for (const file of req.files) {
+            const result = await new Promise((resolve, reject) => {
+                cloudinary.uploader.upload_stream({ folder: 'car_photos' }, (error, result) => {
+                    if (error) reject(error);
+                    else resolve(result);
+                }).end(file.buffer);
+            });
+            imageUrls.push(result.secure_url);
+        }
         const car = await prisma.car.create({
             data: {
                 location: location,
@@ -58,8 +71,6 @@ async function AddCar(req, res) {
                 distance: distance,
                 imageUrls: imageUrls,
                 transmission: transmission,
-                // maxTrip: parseInt(maxtrip),
-                // minTrip: parseInt(mintrip),
                 doors: parseInt(cardoors),
                 startTripDate: startdate,
                 endTripDate: enddate,
@@ -71,12 +82,13 @@ async function AddCar(req, res) {
             return res.status(400).json({ error: "Car not added" });
         }
         return setTimeout(() => {
-            res.status(200).json({ message: "Car added" });
+            res.status(200).json({ message: "Car added to your list" });
         }, 1000)
     } catch (error) {
         if (error.name === 'JsonWebTokenError') {
             return res.status(401).json({ error: "Unauthorized" });
         } else {
+            console.log(error)
             res.status(500).json({ error: 'Server Error' });
         }
     }
@@ -106,7 +118,7 @@ async function AddCar(req, res) {
 
 //         if (deletedImages && deletedImages.length > 0) {
 //             updatedImageUrls = car.imageUrls.filter(url => !deletedImages.includes(url));
-            
+
 //             const carupdated = await prisma.car.update({
 //                 where: {
 //                     userId: userId,
@@ -190,7 +202,7 @@ async function AddCar(req, res) {
 //             } catch (error) {
 //                 console.error("Error deleting images:", error);
 //             }
-            
+
 //         } else
 //             if (newPhotosAdded && newPhotosAdded.length > 0) {
 //                 updatedImageUrls = [...car.imageUrls, ...newPhotosAdded];
@@ -321,128 +333,134 @@ async function AddCar(req, res) {
 // }
 async function UpdateCar(req, res) {
     try {
-      const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos,doors,startTripDate,endTripDate } = req.body;
-      const token = req.headers.authorization.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-      const userId = decoded.id;
-      
-      const newPhotosAdded = await Promise.all(
-        req.files.map(async (file) => {
-          return file.path;
-        })
-      );
-  
-      let updatedImageUrls = [];
-      let car = await prisma.car.findUnique({
-        where: {
-          userId: userId,
-          id: req.params.carId,
-        },
-      });
-  
-      if (!car) {
-        return res.status(404).json({ error: "Car not found" });
-      }
-  
-      if (deletedImages && deletedImages.length > 0) {
-        updatedImageUrls = car.imageUrls.filter(url => !deletedImages.includes(url));
-  
-        // Delete images from Cloudinary
-        const deletePromises = deletedImages.map(async (url) => {
-          const publicId = url.split('/').pop().split('.')[0];
-          try {
-            await cloudinary.uploader.destroy(`uploads/${publicId}`);
-            console.log(`Image ${publicId} deleted successfully`);
-          } catch (error) {
-            console.error(`Error deleting image ${publicId}:`, error);
-          }
+        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos, doors, startTripDate, endTripDate } = req.body;
+        const token = req.headers.authorization.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+        const userId = decoded.id;
+
+        const newPhotosAdded = await Promise.all(
+            req.files.map(async (file) => {
+                const result = await new Promise((resolve, reject) => {
+                    cloudinary.uploader.upload_stream({ folder: 'car_photos' }, (error, result) => {
+                        if (error) reject(error);
+                        else resolve(result);
+                    }).end(file.buffer);
+                });
+                return result.secure_url;
+            })
+        );
+
+        let updatedImageUrls = [];
+        let car = await prisma.car.findUnique({
+            where: {
+                userId: userId,
+                id: req.params.carId,
+            },
         });
-        await Promise.all(deletePromises);
-      } else {
-        updatedImageUrls = car.imageUrls;
-      }
-  
-      if (newPhotosAdded && newPhotosAdded.length > 0) {
-        updatedImageUrls = [...updatedImageUrls, ...newPhotosAdded];
-      }
-  
-      const carupdated = await prisma.car.update({
-        where: {
-          userId: userId,
-          id: req.params.carId,
-        },
-        data: {
-          location: {
-            set: location,
-          },
-          model: {
-            set: model,
-          },
-          make: {
-            set: make,
-          },
-          features: {
-            set: features,
-          },
-          year: {
-            set: parseInt(year),
-          },
-          price: {
-            set: parseFloat(price),
-          },
-          description: {
-            set: description,
-          },
-          distance: {
-            set: distance,
-          },
-          transmission: {
-            set: transmission,
-          },
-          maxTrip: {
-            set: parseInt(maxtrip),
-          },
-          minTrip: {
-            set: parseInt(mintrip),
-          },
-          carSeats: {
-            set: parseInt(carseat),
-          },
-          Type: {
-            set: type,
-          },
-          fuel: {
-            set: fuel,
-          },
-          imageUrls: {
-            set: updatedImageUrls,
-          },
-          doors:{
-            set:parseInt(doors)
-          },
-          startTripDate:{
-            set:startTripDate
-          },
-          endTripDate:{
-            set:endTripDate
-          }
-        },
-      });
-  
-      if (carupdated) {
-        res.status(200).json({ message: "Car updated" });
-      } else {
-        res.status(400).json({ error: "Car not updated" });
-      }
+
+        if (!car) {
+            return res.status(404).json({ error: "Car not found" });
+        }
+
+        if (deletedImages && deletedImages.length > 0) {
+            updatedImageUrls = car.imageUrls.filter(url => !deletedImages.includes(url));
+
+            // Delete images from Cloudinary
+            const deletePromises = deletedImages.map(async (url) => {
+                const publicId = url.split('/').pop().split('.')[0];
+                try {
+                    await cloudinary.uploader.destroy(`car_photos/${publicId}`);
+                    console.log(`Image ${publicId} deleted successfully`);
+                } catch (error) {
+                    console.error(`Error deleting image ${publicId}:`, error);
+                }
+            });
+            await Promise.all(deletePromises);
+        } else {
+            updatedImageUrls = car.imageUrls;
+        }
+
+        if (newPhotosAdded && newPhotosAdded.length > 0) {
+            updatedImageUrls = [...updatedImageUrls, ...newPhotosAdded];
+        }
+
+        const carupdated = await prisma.car.update({
+            where: {
+                userId: userId,
+                id: req.params.carId,
+            },
+            data: {
+                location: {
+                    set: location,
+                },
+                model: {
+                    set: model,
+                },
+                make: {
+                    set: make,
+                },
+                features: {
+                    set: features,
+                },
+                year: {
+                    set: parseInt(year),
+                },
+                price: {
+                    set: parseFloat(price),
+                },
+                description: {
+                    set: description,
+                },
+                distance: {
+                    set: distance,
+                },
+                transmission: {
+                    set: transmission,
+                },
+                maxTrip: {
+                    set: parseInt(maxtrip),
+                },
+                minTrip: {
+                    set: parseInt(mintrip),
+                },
+                carSeats: {
+                    set: parseInt(carseat),
+                },
+                Type: {
+                    set: type,
+                },
+                fuel: {
+                    set: fuel,
+                },
+                imageUrls: {
+                    set: updatedImageUrls,
+                },
+                doors: {
+                    set: parseInt(doors)
+                },
+                startTripDate: {
+                    set: startTripDate
+                },
+                endTripDate: {
+                    set: endTripDate
+                }
+            },
+        });
+
+        if (carupdated) {
+            res.status(200).json({ message: "Car updated" });
+        } else {
+            res.status(400).json({ error: "Car not updated" });
+        }
     } catch (error) {
-      if (error.name === 'JsonWebTokenError') {
-        return res.status(401).json({ error: "Unauthorized" });
-      } else {
-        console.error(error);
-        res.status(500).json({ error: 'Server Error' });
-      }
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ error: "Unauthorized" });
+        } else {
+            console.error(error);
+            res.status(500).json({ error: 'Server Error' });
+        }
     }
-  }
+}
 async function DeleteCar(req, res) {
     try {
         const car = await prisma.car.delete({
@@ -859,7 +877,7 @@ async function DeleteCars(req, res) {
                 // Extract public ID from the URL
                 const publicId = url.split('/').pop().split('.')[0]; // Adjust this if your URL format is different
                 try {
-                    await cloudinary.uploader.destroy(`uploads/${publicId}`);
+                    await cloudinary.uploader.destroy(`car_photos/${publicId}`);
                     console.log(`Image ${publicId} deleted successfully from Cloudinary.`);
                 } catch (error) {
                     console.error(`Error deleting image ${publicId} from Cloudinary:`, error);
@@ -867,7 +885,7 @@ async function DeleteCars(req, res) {
             });
             await Promise.all(deletePromises);
         }
-        
+
         // Delete the car
         await prisma.car.delete({
             where: {
