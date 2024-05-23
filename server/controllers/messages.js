@@ -36,7 +36,7 @@ async function AddMessage(req, res) {
         });
         try {
             // Trigger Pusher event
-            pusher.trigger(chatId, 'new-message', message);
+           await pusher.trigger(chatId, 'new-message', message);
         } catch (e) {
             console.log(e);
         }
@@ -55,7 +55,7 @@ async function RemoveMessage(req, res) {
         const sendById = decoded.id;
         const messageId = req.params.messageId;
         const chatId = req.params.chatId;
-        
+
         // Fetch the chat and its messages
         const chat = await prisma.chat.findFirst({
             where: {
@@ -97,7 +97,7 @@ async function RemoveMessage(req, res) {
         });
         try {
             // Trigger Pusher event for message removal
-            pusher.trigger(chatId, 'message-removed', {
+           await pusher.trigger(chatId, 'message-removed', {
                 messageId: messageId,
                 lastMessage: lastMessage ? lastMessage.content : null
             });
