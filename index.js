@@ -43,6 +43,7 @@ app.get('/userphoto/:file', (req, res) => {
   const filePath = path.join(process.cwd(), 'userphoto', fileName); // Adjust the path here
   res.sendFile(filePath);
 });
-app.listen(5600, () => {
-  console.log(`Server is running on port 5600`);
+const port = 4000
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
 });

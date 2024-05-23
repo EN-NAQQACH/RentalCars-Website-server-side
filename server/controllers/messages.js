@@ -3,6 +3,7 @@ const prisma = new PrismaClient()
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
+import { pusher } from '../tools/pusher.js';
 
 async function AddMessage(req, res) {
     try {
@@ -10,9 +11,10 @@ async function AddMessage(req, res) {
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const { content } = req.body;
         const sendById = decoded.id;
+        const chatId = req.params.chatId;
         let chat = await prisma.chat.findUnique({
             where: {
-                id: req.params.chatId,
+                id: chatId,
                 userIDs: {
                     hasSome: [sendById]
                 }
@@ -24,14 +26,22 @@ async function AddMessage(req, res) {
             data: {
                 content,
                 userId: sendById,
-                chatId: req.params.chatId,
+                chatId: chatId,
                 hour: currentDate,
             }
         });
         await prisma.chat.update({
-            where: { id: req.params.chatId },
+            where: { id: chatId },
             data: { seenBy: [sendById], lastMessage: content, lastMessageHour: currentDate }
         });
+        try {
+            // Trigger Pusher event
+            pusher.trigger(chatId, 'new-message', message);
+        } catch (e) {
+            console.log(e);
+        }
+
+
         res.status(200).json(message);
     } catch (error) {
         console.log(error);
@@ -43,11 +53,13 @@ async function RemoveMessage(req, res) {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const sendById = decoded.id;
-
+        const messageId = req.params.messageId;
+        const chatId = req.params.chatId;
+        
         // Fetch the chat and its messages
         const chat = await prisma.chat.findFirst({
             where: {
-                id: req.params.chatId,
+                id: chatId,
             },
             include: {
                 messages: true,
@@ -61,7 +73,7 @@ async function RemoveMessage(req, res) {
         // Remove the message
         const message = await prisma.message.delete({
             where: {
-                id: req.params.messageId,
+                id: messageId,
                 userId: sendById,
             }
         });
@@ -71,24 +83,34 @@ async function RemoveMessage(req, res) {
         }
 
         // Get the last message after deletion
-        const updatedMessages = chat.messages.filter(m => m.id !== req.params.messageId);
+        const updatedMessages = chat.messages.filter(m => m.id !== messageId);
         const lastMessage = updatedMessages.length > 0 ? updatedMessages[updatedMessages.length - 1] : null;
 
         // Update the chat's lastMessage field
         await prisma.chat.update({
             where: {
-                id: req.params.chatId,
+                id: chatId,
             },
             data: {
                 lastMessage: lastMessage ? lastMessage.content : null,
             },
         });
+        try {
+            // Trigger Pusher event for message removal
+            pusher.trigger(chatId, 'message-removed', {
+                messageId: messageId,
+                lastMessage: lastMessage ? lastMessage.content : null
+            });
+        } catch (error) {
+            console.log(error);
+        }
+
 
         if (message) {
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: "Message deleted successfully",
                 chat: chat,
-                lastMessage: lastMessage ? lastMessage : null
+                lastMessage: lastMessage ? lastMessage.content : null
             });
         }
     } catch (e) {
@@ -102,4 +124,4 @@ async function RemoveMessage(req, res) {
 }
 
 
-export { AddMessage,RemoveMessage }
+export { AddMessage, RemoveMessage }
