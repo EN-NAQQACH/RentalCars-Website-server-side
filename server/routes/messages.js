@@ -7,8 +7,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 
-import { AddMessage,RemoveMessage } from '../controllers/messages.js';
+import { AddMessage,RemoveMessage,UpdateSeenBy } from '../controllers/messages.js';
 router.post('/Messages/:chatId', AddMessage);
 router.delete('/Messages/:messageId/:chatId', RemoveMessage);
+router.post('/Messages/seenby/:chatId', UpdateSeenBy);
 
 export default router;
