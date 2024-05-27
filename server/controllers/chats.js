@@ -10,13 +10,16 @@ async function GetallChats(req, res) {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
-        const userChats = await prisma.chat.findMany({
+        let userChats = await prisma.chat.findMany({
             where:
             {
                 userIDs: {
                     hasSome: [userId]
                 }
             },
+            include: {
+                messages: true,
+            }
         });
         for (const chat of userChats) {
             const reseivedById = chat.userIDs.find(id => id !== userId);
@@ -26,6 +29,7 @@ async function GetallChats(req, res) {
             });
             chat.reseivedUser = reseivedUser;
         }
+        
         setTimeout(() => {
             res.json(userChats);
         }, 300)
@@ -112,6 +116,7 @@ async function GetChat(req, res) {
                     select: {
                         id: true,
                         content: true,
+                        photo: true,
                         userId: true,
                         chatId: true,
                         time: true,
@@ -123,8 +128,23 @@ async function GetChat(req, res) {
         });
         await prisma.chat.update({
             where: { id: req.params.chatId },
-            data: { seenBy: { push: sendById } }
+            data: { seenBy:
+                 { push: sendById } 
+                }
         });
+
+        if (!chat.seenBy.includes(sendById)) {
+            // Update the seenBy array to include the sender's ID
+            await prisma.chat.update({
+                where: { id: req.params.chatId },
+                data: {
+                    seenBy: {
+                        push: sendById
+                    }
+                }
+            });
+        }
+       
         const response = {
             chat: chat,
             userSender: userSender,
@@ -246,6 +266,7 @@ async function AddChatandMessage(req, res) {
                     userId: sendById,
                     chatId: chat.id,
                     hour: currentDate,
+                    seenBy: [sendById],
                     time: new Date(),
                 },
             })

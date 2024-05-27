@@ -4,12 +4,16 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv';
 dotenv.config();
 import { pusher } from '../tools/pusher.js';
+import { v2 as cloudinary } from 'cloudinary';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 
 async function AddMessage(req, res) {
     try {
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        const { content } = req.body;
+        const { content,photoUrl } = req.body;
         const sendById = decoded.id;
         const chatId = req.params.chatId;
         let chat = await prisma.chat.findUnique({
@@ -26,20 +30,36 @@ async function AddMessage(req, res) {
         })
         if (!chat) return res.status(404).json({ message: "Chat not found" })
         let currentDate = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
-        const message = await prisma.message.create({
-            data: {
-                content,
-                userId: sendById,
-                chatId: chatId,
-                hour: currentDate,
-                seenBy: [sendById]
-            }
-        });
+        // const message = await prisma.message.create({
+        //     data: {
+        //         content,
+        //         userId: sendById,
+        //         chatId: chatId,
+        //         hour: currentDate,
+        //         seenBy: [sendById]
+        //     }
+        // });
+        let messageData = {
+            userId: sendById,
+            chatId: chatId,
+            hour: currentDate,
+            seenBy: [sendById]
+        };
+        let lastMessageText;
+        if (photoUrl) {
+            messageData.photo = photoUrl;
+            
+        } else {
+            messageData.content = content;
+        }
+
+        const message = await prisma.message.create({ data: messageData });
+
        await prisma.chat.update({
             where: { id: chatId },
             data: { 
                 seenBy: [sendById], 
-                lastMessage: content, 
+                lastMessage: content || '[Photo]', 
                 lastMessageHour: currentDate,
                 messagesIDs :{
                     push:message.id
@@ -145,7 +165,6 @@ async function RemoveMessage(req, res) {
         } catch (error) {
             console.log(error);
         }
-
 
         if (message) {
             return res.status(200).json({

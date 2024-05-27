@@ -72,19 +72,22 @@ model Chat {
   userIDs       String[]  @db.ObjectId
   time          DateTime  @default(now())
   seenBy        String[]  @db.ObjectId
-  messages      Message[]
+  messages      Message[] 
+  messagesIDs   String[]  @db.ObjectId
   lastMessage   String?
   lastMessageHour String?
 }
 model Message {
   id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  content   String
+  content   String?
   userId    String
   chat      Chat      @relation(fields: [chatId], references: [id])
   chatId    String    @db.ObjectId
   time      DateTime  @default(now())
   hour      String?
+  seenBy    String[]  @db.ObjectId
   picture   String?
+  photo     String?
 }
 model Reservation {
   id         String     @id @default(auto()) @map("_id") @db.ObjectId
