@@ -43,7 +43,7 @@ const upload = multer({ storage });
 
 async function AddCar(req, res) {
     try {
-        const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat } = req.body;
+        const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat,positionlat,positionlng } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -76,6 +76,8 @@ async function AddCar(req, res) {
                 endTripDate: enddate,
                 carSeats: parseInt(carseat),
                 userId: userId,
+                positionlat:positionlat,
+                positionlang:positionlng
             },
         });
         if (!car) {
@@ -333,7 +335,7 @@ async function AddCar(req, res) {
 // }
 async function UpdateCar(req, res) {
     try {
-        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos, doors, startTripDate, endTripDate } = req.body;
+        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos, doors, startTripDate, endTripDate,positionlat,positionlng } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -443,6 +445,12 @@ async function UpdateCar(req, res) {
                 },
                 endTripDate: {
                     set: endTripDate
+                },
+                positionlat:{
+                    set: parseFloat(positionlat)
+                },
+                positionlang:{
+                    set: parseFloat(positionlng)
                 }
             },
         });
@@ -848,6 +856,12 @@ async function DeleteCars(req, res) {
             return res.status(404).json({ error: "Car not found" });
         }
 
+         // Delete associated Favorite records
+         await prisma.favorite.deleteMany({
+            where: {
+                carId: carId,
+            },
+        });
 
         // if (car.imageUrls && car.imageUrls.length > 0) {
         //     car.imageUrls.forEach(url => {
