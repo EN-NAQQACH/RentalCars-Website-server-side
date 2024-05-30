@@ -76,8 +76,8 @@ async function AddCar(req, res) {
                 endTripDate: enddate,
                 carSeats: parseInt(carseat),
                 userId: userId,
-                positionlat:positionlat,
-                positionlang:positionlng
+                positionlat:parseFloat(positionlat),
+                positionlang:parseFloat(positionlng)
             },
         });
         if (!car) {
