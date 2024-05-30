@@ -317,20 +317,38 @@ async function updateUser(req, res) {
     }
 
     // Update user data in the database
-    const updatedUser = await prisma.user.update({
-      where: { id: decoded.id },
-      data: {
-        firstName,
-        lastName,
-        email,
-        number,
-        about,
-        picture,
-        zipcode,
-        city,
-        address,
-      },
-    });
+    let updatedUser 
+    if (picture) {
+      updatedUser = await prisma.user.update({
+        where: { id: decoded.id },
+        data: {
+          firstName,
+          lastName,
+          email,
+          number,
+          about,
+          picture,
+          zipcode,
+          city,
+          address,
+        },
+      });
+    }else{
+      updatedUser = await prisma.user.update({
+        where: { id: decoded.id },
+        data: {
+          firstName,
+          lastName,
+          email,
+          number,
+          about,
+          zipcode,
+          city,
+          address,
+        },
+      });
+    }
+
 
     // Respond with success message
     res.status(200).json({ message: 'User updated successfully' });
