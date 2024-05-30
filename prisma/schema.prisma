@@ -19,7 +19,7 @@ model User {
   lastName  String
   email     String   @unique
   password  String
-  picture   String   @default("")
+  picture   String?  @default("")
   googleId  String   @default("")
   about     String   @default("")
   number    String   @default("")
