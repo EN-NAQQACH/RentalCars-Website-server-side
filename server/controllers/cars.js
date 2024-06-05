@@ -12,7 +12,7 @@ cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.API_KEY,
     api_secret: process.env.API_SECRET,
-  });
+});
 // const storage = new CloudinaryStorage({
 //     cloudinary: cloudinary,
 //     params: {
@@ -43,7 +43,7 @@ const upload = multer({ storage });
 
 async function AddCar(req, res) {
     try {
-        const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat,positionlat,positionlng } = req.body;
+        const { location, fuel, model, year, make, price, description, distance, transmission, cardoors, startdate, enddate, features, type, carseat, positionlat, positionlng } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -76,8 +76,8 @@ async function AddCar(req, res) {
                 endTripDate: enddate,
                 carSeats: parseInt(carseat),
                 userId: userId,
-                positionlat:parseFloat(positionlat),
-                positionlang:parseFloat(positionlng)
+                positionlat: parseFloat(positionlat),
+                positionlang: parseFloat(positionlng)
             },
         });
         if (!car) {
@@ -335,7 +335,7 @@ async function AddCar(req, res) {
 // }
 async function UpdateCar(req, res) {
     try {
-        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos, doors, startTripDate, endTripDate,positionlat,positionlng } = req.body;
+        const { location, type, model, year, fuel, make, price, description, distance, transmission, maxtrip, mintrip, features, carseat, deletedImages, newPhotos, doors, startTripDate, endTripDate, positionlat, positionlng } = req.body;
         const token = req.headers.authorization.split(' ')[1];
         const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
         const userId = decoded.id;
@@ -446,10 +446,10 @@ async function UpdateCar(req, res) {
                 endTripDate: {
                     set: endTripDate
                 },
-                positionlat:{
+                positionlat: {
                     set: parseFloat(positionlat)
                 },
-                positionlang:{
+                positionlang: {
                     set: parseFloat(positionlng)
                 }
             },
@@ -856,12 +856,20 @@ async function DeleteCars(req, res) {
             return res.status(404).json({ error: "Car not found" });
         }
 
-         // Delete associated Favorite records
-         await prisma.favorite.deleteMany({
+        // Delete associated Favorite records
+        await prisma.favorite.deleteMany({
             where: {
                 carId: carId,
             },
         });
+
+        // Delete associated Reservation records
+        await prisma.reservation.deleteMany({
+            where: {
+                carId: carId,
+            },
+        });
+
 
         // if (car.imageUrls && car.imageUrls.length > 0) {
         //     car.imageUrls.forEach(url => {
